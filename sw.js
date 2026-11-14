@@ -1,74 +1,468 @@
 
 'use strict';
 
-const CACHE = 'sohstx-health-static-v2';
+const FIELDS=['date','bgl','trend','eventType','senderId','text','template','msgType','affectsFob','affectsIob','doseUnits','foodG','foodSugar','foodFat','foodProtein','foodSalt','foodCal','doseAutomatic','description','fpBgl','actionMins','exerciseMins','exerciseLevel'];
+const $=id=>document.getElementById(id);
+const DBNAME='sohstx-health-v1';
+let db,records=[];
 
-const ASSETS = [
-  './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './icon.svg',
-  './manifest.webmanifest'
-];
+function notice(s){$('notice').textContent=s;}
 
-// Install the new service worker.
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE)
-      .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
-  );
-});
+function parseCSV(text){
+ let out=[],row=[],field='',quote=false;
+ for(let i=0;i<text.length;i++){
+  const c=text[i];
+  if(quote){
+   if(c==='"'&&text[i+1]==='"'){field+='"';i++;}
+   else if(c==='"')quote=false;
+   else field+=c;
+  }else if(c==='"')quote=true;
+  else if(c===','){row.push(field);field='';}
+  else if(c==='\n'||c==='\r'){
+   if(c==='\r'&&text[i+1]==='\n')i++;
+   row.push(field);
+   if(row.some(x=>x!==''))out.push(row);
+   row=[];field='';
+  }else field+=c;
+ }
+ if(quote)throw Error('Unclosed quoted CSV field');
+ if(row.length||field){row.push(field);out.push(row);}
+ return out;
+}
 
-// Remove outdated caches and activate immediately.
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys =>
-        Promise.all(
-          keys
-            .filter(key =>
-              key.startsWith('sohstx-health-static-') &&
-              key !== CACHE
-            )
-            .map(key => caches.delete(key))
-        )
-      )
-      .then(() => self.clients.claim())
-  );
-});
+function csvEscape(x){
+ let s=String(x??'');
+ return /[",\r\n]/.test(s)?'"'+s.replaceAll('"','""')+'"':s;
+}
 
-// Network-first for application files.
-// Cached files are used if the network is unavailable.
-self.addEventListener('fetch', event => {
-  const request = event.request;
+function openDB(){
+ return new Promise((resolve,reject)=>{
+  const req=indexedDB.open(DBNAME,1);
+  req.onupgradeneeded=()=>{
+   const store=req.result.createObjectStore('records',{keyPath:'id'});
+   store.createIndex('date','date');
+  };
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error);
+ });
+}
 
-  if (request.method !== 'GET') return;
+function transaction(mode,fn){
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('records',mode);
+  fn(tx.objectStore('records'));
+  tx.oncomplete=()=>resolve();
+  tx.onerror=()=>reject(tx.error);
+  tx.onabort=()=>reject(tx.error);
+ });
+}
 
-  const url = new URL(request.url);
+function getAll(){
+ return new Promise((resolve,reject)=>{
+  const req=db.transaction('records').objectStore('records').getAll();
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error);
+ });
+}
 
-  if (url.origin !== self.location.origin) return;
+function hash(s){
+ let h=2166136261;
+ for(let i=0;i<s.length;i++){
+  h^=s.charCodeAt(i);
+  h=Math.imul(h,16777619);
+ }
+ return(h>>>0).toString(16).padStart(8,'0');
+}
 
-  event.respondWith(
-    (async () => {
-      const cache = await caches.open(CACHE);
+async function refresh(){
+ records=await getAll();
+ render();
+}
 
-      try {
-        const response = await fetch(request);
+function libreDate(s){
+ const m=String(s||'').trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+ if(!m)return null;
+ let hour=Number(m[4])%12;
+ if(m[6].toUpperCase()==='PM')hour+=12;
+ const d=new Date(Number(m[3]),Number(m[1])-1,Number(m[2]),hour,Number(m[5]));
+ if(d.getFullYear()!==Number(m[3])||
+    d.getMonth()!==Number(m[1])-1||
+    d.getDate()!==Number(m[2])||
+    d.getHours()!==hour||
+    d.getMinutes()!==Number(m[5]))return null;
+ return d.toISOString();
+}
 
-        if (response.ok) {
-          await cache.put(request, response.clone());
-        }
+function libreRecord(row){
+ const date=libreDate(row['Device Timestamp']);
+ if(!date)return null;
 
-        return response;
-      } catch (error) {
-        const cached = await cache.match(request);
+ const historic=String(row['Historic Glucose mg/dL']||'').trim();
+ const scan=String(row['Scan Glucose mg/dL']||'').trim();
+ const valid=x=>x!==''&&Number.isFinite(Number(x))&&Number(x)>0;
+ const hasHistoric=valid(historic);
+ const hasScan=valid(scan);
+ const notes=String(row.Notes||'').trim();
+ const details=[];
 
-        if (cached) return cached;
+ for(const [key,label] of [
+  ['Carbohydrates (grams)','Carbohydrates'],
+  ['Carbohydrates (servings)','Carb servings'],
+  ['Long-Acting Insulin (units)','Long-acting insulin'],
+  ['Rapid-Acting Insulin (units)','Rapid-acting insulin'],
+  ['Meal Insulin (units)','Meal insulin'],
+  ['Correction Insulin (units)','Correction insulin'],
+  ['Strip Glucose mg/dL','Strip glucose'],
+  ['Ketone mmol/L','Ketones'],
+  ['Non-numeric Food','Food'],
+  ['Non-numeric Long-Acting Insulin','Long-acting insulin note'],
+  ['Non-numeric Rapid-Acting Insulin','Rapid-acting insulin note']
+ ]){
+  if(String(row[key]||'').trim())
+   details.push(label+': '+String(row[key]).trim());
+ }
 
-        throw error;
-      }
-    })()
-  );
-});
+ const device=String(row['Serial Number']||row.Device||'unknown').trim();
+ const out=[];
+
+ if(hasHistoric||hasScan){
+  const value=hasHistoric?historic:scan;
+  const kind=hasHistoric?'historic':'scan';
+  const raw={
+   date,bgl:value,eventType:'GLUCOSE',
+   msgType:'LIBREVIEW',
+   description:kind+' glucose reading',
+   libreKind:kind,libreDevice:device
+  };
+  out.push({
+   id:'libreview:glucose:'+hash(device+'|'+date+'|'+kind)+':'+device.length,
+   source:'libreview',date,raw
+  });
+ }
+
+ if(notes||details.length){
+  const text=notes||'LibreView logged event';
+  const raw={
+   date,bgl:'',eventType:'LIBREVIEW_EVENT',
+   msgType:'LIBREVIEW',text,
+   details:details.join(' · '),
+   description:text,libreDevice:device
+  };
+  out.push({
+   id:'libreview:event:'+hash(device+'|'+date+'|'+text+'|'+details.join('|')),
+   source:'libreview',date,raw
+  });
+ }
+
+ return out;
+}
+
+async function importCSV(file){
+ const rows=parseCSV((await file.text()).replace(/^\ufeff/,''));
+ const required=[
+  'Device Timestamp','Record Type',
+  'Historic Glucose mg/dL','Scan Glucose mg/dL'
+ ];
+ const headerIndex=rows.findIndex(row=>
+  required.every(key=>row.map(x=>x.trim()).includes(key))
+ );
+ if(headerIndex<0)
+  throw Error('This is not a supported LibreView glucose CSV export.');
+
+ const head=rows[headerIndex].map(x=>x.trim());
+ const existing=new Set(records.map(r=>r.id));
+ const hasHistoricRows=rows.slice(headerIndex+1).some(c=>{
+  const v=String(c[head.indexOf('Historic Glucose mg/dL')]||'').trim();
+  return v!==''&&Number.isFinite(Number(v))&&Number(v)>0;
+ });
+
+ let inserted=0,invalid=0,duplicates=0;
+ const pending=[];
+
+ for(const cells of rows.slice(headerIndex+1)){
+  const raw={};
+  head.forEach((key,i)=>raw[key]=cells[i]??'');
+  let candidates=libreRecord(raw);
+  if(candidates===null){invalid++;continue;}
+  if(hasHistoricRows)
+   candidates=candidates.filter(r=>r.raw.libreKind!=='scan');
+
+  for(const r of candidates){
+   if(existing.has(r.id)){duplicates++;continue;}
+   existing.add(r.id);
+   pending.push(r);
+   inserted++;
+  }
+ }
+
+ if(pending.length)
+  await transaction('readwrite',store=>pending.forEach(r=>store.put(r)));
+
+ await refresh();
+ notice(`Imported ${inserted} new LibreView records from ${file.name}. ${duplicates} duplicates skipped.${invalid?' '+invalid+' invalid timestamps skipped.':''}`);
+}
+
+function validReadings(){
+ return records.filter(r=>
+  r.source==='libreview'&&
+  r.raw.bgl!==''&&
+  r.raw.bgl!=null&&
+  Number.isFinite(Number(r.raw.bgl))&&
+  Number(r.raw.bgl)>0&&
+  Number.isFinite(Date.parse(r.date))
+ ).map(r=>({
+  time:Date.parse(r.date),
+  value:Number(r.raw.bgl)
+ })).sort((a,b)=>a.time-b.time);
+}
+
+function formatTime(date){
+ const d=new Date(date);
+ return Number.isNaN(d.getTime())?'Unknown time':
+  d.toLocaleString(undefined,{
+   month:'short',day:'numeric',
+   hour:'numeric',minute:'2-digit'
+  });
+}
+
+function render(){
+ const points=validReadings(),latest=points.at(-1);
+ $('latest').textContent=latest?Math.round(latest.value):'—';
+ $('latestTime').textContent=latest?formatTime(latest.time):'No readings yet';
+ $('average').textContent=points.length?
+  (points.reduce((s,p)=>s+p.value,0)/points.length).toFixed(1):'—';
+ $('readingCount').textContent=points.length.toLocaleString()+' readings';
+ $('tir').textContent=points.length?
+  (100*points.filter(p=>p.value>=70&&p.value<=180).length/points.length).toFixed(1):'—';
+
+ const events=records.filter(r=>
+  r.source!=='gluroo'&&
+  !(r.raw.bgl!==''&&r.raw.bgl!=null)
+ );
+ $('eventCount').textContent=events.length;
+ $('eventTotal').textContent=events.length+' total';
+
+ const timeline=$('timeline');
+ timeline.replaceChildren();
+ const sorted=events.sort((a,b)=>
+  Date.parse(b.date)-Date.parse(a.date)
+ ).slice(0,80);
+
+ if(!sorted.length){
+  const p=document.createElement('p');
+  p.className='emptytext';
+  p.textContent='Your imported and manually logged events will appear here.';
+  timeline.append(p);
+ }
+
+ for(const e of sorted){
+  const div=document.createElement('div');
+  div.className='entry';
+  const left=document.createElement('div');
+  const type=document.createElement('span');
+  const strong=document.createElement('strong');
+  const small=document.createElement('small');
+  type.className='pill';
+  type.textContent=e.raw.msgType||e.raw.eventType||'event';
+  strong.textContent=e.raw.text||e.raw.description||'Recorded event';
+  small.textContent=formatTime(e.date)+
+   (e.raw.estimated==='true'?' · estimated':'')+
+   (e.raw.details?' · '+e.raw.details:'');
+  left.append(type,strong,small);
+  div.append(left);
+  timeline.append(div);
+ }
+ drawChart(points);
+}
+
+function drawChart(all){
+ const canvas=$('chart'),wrap=canvas.parentElement,range=$('range').value;
+ const end=all.length?all.at(-1).time:Date.now();
+ const points=range==='all'?all:all.filter(p=>p.time>=end-Number(range)*3600000);
+ $('chartEmpty').style.display=points.length?'none':'flex';
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ const w=wrap.clientWidth,h=wrap.clientHeight;
+ canvas.width=Math.round(w*dpr);
+ canvas.height=Math.round(h*dpr);
+ const c=canvas.getContext('2d');
+ c.scale(dpr,dpr);
+ c.clearRect(0,0,w,h);
+ if(!points.length)return;
+
+ const L=44,R=12,T=16,B=32,pw=w-L-R,ph=h-T-B;
+ const minY=Math.min(60,Math.floor(Math.min(...points.map(p=>p.value))/20)*20);
+ const maxY=Math.max(200,Math.ceil(Math.max(...points.map(p=>p.value))/20)*20);
+ let minX=points[0].time,maxX=points.at(-1).time;
+ if(minX===maxX){minX-=1800000;maxX+=1800000;}
+ const x=t=>L+(t-minX)/(maxX-minX)*pw;
+ const y=v=>T+(maxY-v)/(maxY-minY)*ph;
+
+ c.fillStyle='rgba(93,217,170,.08)';
+ c.fillRect(L,y(180),pw,y(70)-y(180));
+ c.font='11px system-ui';
+ c.textAlign='right';
+
+ for(let v=Math.ceil(minY/40)*40;v<=maxY;v+=40){
+  c.strokeStyle='#304057';
+  c.lineWidth=1;
+  c.beginPath();
+  c.moveTo(L,y(v));
+  c.lineTo(w-R,y(v));
+  c.stroke();
+  c.fillStyle='#a0aec0';
+  c.fillText(v,L-8,y(v)+4);
+ }
+
+ c.textAlign='center';
+ for(let i=0;i<=3;i++){
+  const t=minX+(maxX-minX)*i/3;
+  c.fillStyle='#a0aec0';
+  c.fillText(new Date(t).toLocaleString(undefined,{
+   month:'numeric',day:'numeric',hour:'numeric'
+  }),L+pw*i/3,h-8);
+ }
+
+ c.strokeStyle='#55b6e8';
+ c.lineWidth=2;
+ c.lineJoin='round';
+ c.beginPath();
+ let prev=null;
+ for(const p of points){
+  if(!prev||p.time-prev.time>15*60000)
+   c.moveTo(x(p.time),y(p.value));
+  else c.lineTo(x(p.time),y(p.value));
+  prev=p;
+ }
+ c.stroke();
+
+ if(points.length<50){
+  c.fillStyle='#55b6e8';
+  for(const p of points){
+   c.beginPath();
+   c.arc(x(p.time),y(p.value),2.5,0,Math.PI*2);
+   c.fill();
+  }
+ }
+}
+
+function download(name,content,type){
+ const blob=new Blob([content],{type});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;
+ a.download=name;
+ a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+
+function localDateTime(){
+ const d=new Date(),offset=d.getTimezoneOffset();
+ return new Date(d.getTime()-offset*60000).toISOString().slice(0,16);
+}
+
+async function init(){
+ if(!('indexedDB'in window)){
+  notice('This browser does not support IndexedDB. Use a current Chrome or Firefox browser.');
+  return;
+ }
+ db=await openDB();
+ await refresh();
+ $('eventDate').value=localDateTime();
+
+ $('importBtn').onclick=()=>$('csvFile').click();
+ $('csvFile').onchange=async e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  try{await importCSV(file);}
+  catch(err){notice('Import error: '+err.message);}
+  e.target.value='';
+ };
+
+ $('range').onchange=()=>drawChart(validReadings());
+ window.addEventListener('resize',()=>drawChart(validReadings()));
+
+ $('eventForm').onsubmit=async e=>{
+  e.preventDefault();
+  const date=new Date($('eventDate').value);
+  if(Number.isNaN(date.getTime()))
+   return notice('Enter a valid event date.');
+  const raw={
+   date:date.toISOString(),
+   eventType:$('eventType').value,
+   msgType:'MANUAL',
+   text:$('eventText').value.trim(),
+   details:$('eventValue').value.trim(),
+   estimated:String($('estimated').checked),
+   bgl:''
+  };
+  if(!raw.text)return;
+  const r={
+   id:'manual:'+crypto.randomUUID(),
+   source:'manual',date:raw.date,raw
+  };
+  await transaction('readwrite',s=>s.put(r));
+  $('eventText').value='';
+  $('eventValue').value='';
+  $('estimated').checked=false;
+  await refresh();
+  notice('Event saved locally.');
+ };
+
+ $('backupBtn').onclick=()=>download(
+  'sohstx-health-backup-'+new Date().toISOString().slice(0,10)+'.json',
+  JSON.stringify({
+   format:'sohstx-health',
+   version:1,
+   exportedAt:new Date().toISOString(),
+   records
+  },null,2),
+  'application/json'
+ );
+
+ $('restoreBtn').onclick=()=>$('backupFile').click();
+ $('backupFile').onchange=async e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  try{
+   const obj=JSON.parse(await file.text());
+   if(obj.format!=='sohstx-health'||obj.version!==1||!Array.isArray(obj.records))
+    throw Error('Not a supported SohStx Health backup');
+   if(obj.records.length>500000)
+    throw Error('Backup is too large');
+   const valid=obj.records.every(r=>
+    r&&typeof r.id==='string'&&
+    typeof r.date==='string'&&
+    r.raw&&typeof r.raw==='object'&&
+    !Array.isArray(r.raw)
+   );
+   if(!valid)throw Error('Invalid backup records');
+   await transaction('readwrite',s=>obj.records.forEach(r=>s.put(r)));
+   await refresh();
+   notice(`Restored backup. ${obj.records.length} records processed.`);
+  }catch(err){
+   notice('Restore error: '+err.message);
+  }
+  e.target.value='';
+ };
+
+ $('exportCsvBtn').onclick=()=>{
+  const keys=[...new Set([...FIELDS,'details','estimated'])];
+  const rows=[['source','recordId',...keys].map(csvEscape).join(',')];
+  for(const r of records)
+   rows.push([r.source,r.id,...keys.map(k=>r.raw[k]??'')].map(csvEscape).join(','));
+  download('sohstx-health-records.csv',rows.join('\r\n'),'text/csv;charset=utf-8');
+ };
+
+ $('clearBtn').onclick=async()=>{
+  if(!confirm('Permanently delete ALL locally stored health records from this browser? Download a backup first.'))return;
+  if(!confirm('Final confirmation: delete all local records?'))return;
+  await transaction('readwrite',s=>s.clear());
+  await refresh();
+  notice('Local health records deleted.');
+ };
+
+ if('serviceWorker'in navigator&&location.protocol==='https:')
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+init().catch(e=>notice('Startup error: '+e.message));
