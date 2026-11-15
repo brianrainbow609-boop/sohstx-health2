@@ -14,7 +14,43 @@
     if(notes)details.push(notes);
     return {id:'manual:'+crypto.randomUUID(),source:'manual',date,raw:{date,bgl:'',eventType:'meal',msgType:'MANUAL',text:name,details:details.join('; '),nutrition:values,mealNotes:notes}};
   }
-  if(typeof module!=='undefined'&&module.exports){module.exports={makeMeal,isMeal};return;}
+  const profile={
+    'Cod':[1,90,20,0,1],
+    'Core Power Chocolate 42 g':[1,230,42,9,3.5],
+    'White rice (dry)':[0.25,160,3,36,0],
+    'White rice (cooked)':[0.25,51,1.1,11.1,0.1],
+    'Mott’s fruit bar':[1,140,1,26,4]
+  };
+  function estimate(items){
+    const sums={};
+    for(const item of items||[]){
+      const p=profile[item.name];if(!p||!Number.isFinite(item.quantity)||item.quantity<=0)continue;
+      nutrients.forEach(([key],i)=>{sums[key]=(sums[key]||0)+item.quantity/p[0]*p[i+1];});
+    }
+    return sums;
+  }
+  function savedValues(raw){
+    const v={...estimate(raw.mealItems)};
+    const patterns={kcal:/([\d.]+)\s*kcal/i,protein:/([\d.]+)\s*g\s*protein/i,carbs:/([\d.]+)\s*g\s*carb/i,fat:/([\d.]+)\s*g\s*fat/i};
+    for(const [k] of nutrients){
+      const stored=raw.nutrition?.[k], match=(raw.details||'').match(patterns[k]);
+      if(Number.isFinite(stored))v[k]=stored;
+      else if(match&&Number.isFinite(Number(match[1])))v[k]=Number(match[1]);
+    }
+    return v;
+  }
+  function rolling(rows,now){
+    const sums={};let count=0,incomplete=0;
+    for(const r of rows){
+      const t=Date.parse(r.date);if(!isMeal(r)||!(t>now-86400000&&t<=now))continue;
+      count++;const v=savedValues(r.raw);
+      if(nutrients.some(([k])=>v[k]==null)||r.raw.mealExtra&&!r.raw.manualTotals)incomplete++;
+      for(const [k] of nutrients)if(v[k]!=null)sums[k]=(sums[k]||0)+v[k];
+    }
+    return {sums,count,incomplete};
+  }
+  function formatMacros(v){return nutrients.map(([k,label,unit])=>label+' '+(v[k]==null?'—':Number(v[k].toFixed(1))+' '+unit)).join(' · ');}
+  if(typeof module!=='undefined'&&module.exports){module.exports={makeMeal,isMeal,estimate,rolling};return;}
   function setup(){
     const tabs=document.querySelector('.tabs');
     if(!tabs||!document.getElementById('eventForm')||document.getElementById('view-meals'))return;
@@ -62,6 +98,20 @@
     function describe(item){
       return item.quantity+' '+item.unit+(item.quantity>1?'s':'')+' '+item.name;
     }
+    const day=document.createElement('section');
+    const dayTitle=document.createElement('h3');dayTitle.textContent='Last 24 hours';
+    const amounts=document.createElement('strong'), coverage=document.createElement('p');
+    day.append(dayTitle,amounts,coverage);composer.append(day);
+    function updateDay(){
+      const result=rolling(visibleEvents(),Date.now());
+      amounts.textContent=formatMacros(result.count?result.sums:{kcal:0,protein:0,carbs:0,fat:0});
+      coverage.textContent=result.count+' logged meals'+(result.incomplete?' · '+result.incomplete+' with missing or partial nutrition':'');
+    }
+    setInterval(updateDay,60000);window.addEventListener('focus',updateDay);
+    function draft(){
+      const v=estimate(portions());for(const [k] of nutrients)if(f[k].value!=='')v[k]=Number(f[k].value);
+      return v;
+    }
     function showBasket(){
       basket.replaceChildren();
       const selected=portions();
@@ -72,15 +122,15 @@
         remove.type='button';remove.textContent='−';remove.setAttribute('aria-label','Remove one portion of '+preset[0]);
         remove.onclick=()=>{quantities[i]--;showBasket();};row.append(label,remove);basket.append(row);
       }
-      total.textContent=selected.length?'':'Tap a food to start a meal.';
+      total.textContent=Object.keys(draft()).length?'Meal estimate · '+formatMacros(draft()):'Tap a food to start a meal.';
     }
     for(const [i,[name,step,unit]] of presets.entries()){
       const b=document.createElement('button');b.type='button';b.textContent=name;
-      const detail=document.createElement('small');detail.textContent='+ '+step+' '+unit;b.append(detail);
+      const detail=document.createElement('small');detail.textContent=name==='Cod'?'3 oz cooked, plain':name==='Mott’s fruit bar'?'1 strawberry soft baked bar (37 g)':'+ '+step+' '+unit;b.append(detail);
       b.onclick=()=>{if(!portions().length&&!f.mealName.value&&!extras.open)f.when.value=localDateTime();quantities[i]++;status.textContent='';showBasket();};controls.append(b);
     }
-    f.when.value=localDateTime(); showBasket();
-    function placeComposer(){
+    nutrientDetails.querySelector('summary').textContent='Override meal totals or add notes';form.addEventListener('input',showBasket);f.when.value=localDateTime(); showBasket();updateDay();
+    function placeComposer(){updateDay();
       if(home.classList.contains('active'))home.prepend(composer);
       else if(view.classList.contains('active'))view.prepend(composer);
     }
@@ -101,7 +151,8 @@
         const repeat=document.createElement('button');repeat.type='button';repeat.textContent='Use this meal';
         repeat.onclick=()=>{
           quantities.fill(0);showBasket();extras.open=true;f.mealName.value=name;if(Array.isArray(r.raw.mealItems)&&r.raw.mealItems.length&&r.raw.mealItems.every(item=>presets.some(p=>p[0]===item.name&&p[2]===item.unit))){for(const item of r.raw.mealItems){const i=presets.findIndex(p=>p[0]===item.name);quantities[i]=item.quantity/presets[i][1];}f.mealName.value=r.raw.mealExtra||'';showBasket();}f.when.value=localDateTime();
-          for(const [k] of nutrients)f[k].value=r.raw.nutrition?.[k]??'';
+          for(const [k] of nutrients)f[k].value=(r.raw.manualTotals?.[k]??(r.raw.autoNutrition?undefined:r.raw.nutrition?.[k]))??'';
+          showBasket();
           f.notes.value=r.raw.mealNotes??r.raw.details??'';
           nutrientDetails.open=!!(f.notes.value||r.raw.nutrition);
           status.textContent='Meal copied. Adjust it and tap Save meal.';f.mealName.focus();form.scrollIntoView({block:'center'});
@@ -119,10 +170,10 @@
       save.disabled=true;
       try{
         const values={};for(const [k] of nutrients)if(f[k].value!=='')values[k]=Number(f[k].value);
-        const r=makeMeal(name,f.when.value,values,f.notes.value.trim());
-        r.raw.mealItems=items;r.raw.mealExtra=f.mealName.value.trim();await transaction('readwrite',store=>store.add(r));
+        const r=makeMeal(name,f.when.value,draft(),f.notes.value.trim());
+        r.raw.autoNutrition=true;r.raw.manualTotals=Object.keys(values).length?values:null;r.raw.mealItems=items;r.raw.mealExtra=f.mealName.value.trim();await transaction('readwrite',store=>store.add(r));
         form.reset();quantities.fill(0);showBasket();extras.open=false;nutrientDetails.open=false;f.when.value=localDateTime();form.querySelector('details').open=false;status.textContent='Saved '+name+'.';
-        await refresh();history();
+        await refresh();history();updateDay();
       }catch(err){status.textContent='Check Records before retrying: '+err.message;}
       finally{save.disabled=false;}
     };
