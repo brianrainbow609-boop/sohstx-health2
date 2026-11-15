@@ -515,7 +515,7 @@
     view.innerHTML='<section class="panel"><h2>Import &amp; export</h2><p>Import LibreView, monthly labs or a SohStx CSV or JSON file.</p><div class="v21-actions data-import"></div><h3>Complete backup &amp; Clinical handoff</h3><p>Includes saved readings, journal entries and lab results.</p><div class="v21-actions data-backup"></div><details><summary>Other export formats</summary><div class="v21-actions data-other"></div></details></section>';
     document.querySelector('main footer').before(view);
     tab.addEventListener('click',()=>{setTab('data');requestAnimationFrame(()=>document.getElementById('pageTitle').textContent='Import & export');});
-    const input=document.createElement('input');input.type='file';input.accept='.csv,.json';input.hidden=true;view.append(input);
+    const input=document.createElement('input');input.type='file';input.accept='*/*';';input.hidden=true;view.append(input);
     const pick=e=>{e.preventDefault();e.stopImmediatePropagation();input.click();};
     home.textContent='Import file';home.addEventListener('click',pick,true);
     // The header picker remains visible on the Data tab too.
