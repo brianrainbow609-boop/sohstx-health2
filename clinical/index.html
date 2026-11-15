@@ -1,11 +1,147 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102337"><meta name="description" content="SohStx Health Clinical — local-first clinical review"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml"><title>SohStx Health Clinical</title><style>
 :root{font-family:system-ui,sans-serif;color-scheme:dark;background:#091522;color:#eaf4ff}*{box-sizing:border-box}body{margin:0}header,main{max-width:1100px;margin:auto;padding:20px}header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #30465b;gap:12px}h1{font-size:clamp(27px,5vw,40px);margin:10px 0}h2{font-size:20px}p,.muted{color:#abc1d4}.eyebrow{color:#69c8eb;font-size:12px;letter-spacing:2px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}.panel{background:#14263a;border:1px solid #314a62;border-radius:16px;padding:20px;margin:16px 0}.stat{font-size:30px;font-weight:750;margin:7px 0}.stat small{font-size:13px;font-weight:400}button{background:#63c9ef;color:#092032;border:0;border-radius:10px;padding:12px 17px;font:inherit;font-weight:700;cursor:pointer;min-height:44px}button.secondary{background:#28445b;color:#f1f8ff}button:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;flex-wrap:wrap;gap:10px}.notice{white-space:pre-wrap;overflow-wrap:anywhere}table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid #35506a;padding:10px;font-size:13px}.scroll{overflow:auto;max-height:430px}canvas{width:100%;height:250px;display:block}footer{font-size:12px;color:#abc1d4;text-align:center;padding:24px}@media(max-width:500px){header{flex-direction:column;align-items:flex-start}}
-</style><link rel="stylesheet" href="/mobile-reading.css?v=1"></head><body><header><div><strong>✳ SohStx Health</strong><div class="eyebrow">CLINICAL EDITION</div></div><button id="install">Install Clinical</button></header><main><section><div class="eyebrow">CLINICAL REVIEW / BUILD 1</div><h1>Health data, ready for review.</h1><p>Independent from Personal. Import a clinical JSON export to examine glucose readings and maintain a local clinical copy.</p></section><section class="panel"><h2>Clinical data</h2><div class="actions"><button id="import">Import clinical JSON</button><input type="file" id="file" accept=".json,application/json" hidden><button id="export" class="secondary" disabled>Download imported JSON</button><button id="clear" class="secondary" disabled>Clear clinical copy</button></div><p id="status" class="notice" role="status">No clinical data imported.</p></section><section class="grid"><article class="panel"><div class="muted">Glucose readings</div><div class="stat" id="count">—</div></article><article class="panel"><div class="muted">Mean glucose</div><div class="stat" id="mean">—</div></article><article class="panel"><div class="muted">Observed 70–180 mg/dL</div><div class="stat" id="tir">—</div></article><article class="panel"><div class="muted">Latest observation</div><div class="stat" id="latest" style="font-size:17px">—</div></article></section><section class="panel"><h2>Glucose observations</h2><canvas id="chart" aria-label="Glucose trend chart" role="img"></canvas><p class="muted">Sample-based statistics. Not time-weighted; incomplete sampling may bias results.</p></section><section class="panel"><h2>Imported data preview</h2><p class="muted" id="shape">Import a clinical JSON export to inspect its structure.</p><div class="scroll" id="preview"></div></section></main><footer>Local-first clinical viewer · Not a medical device · No diagnostic or dosing recommendations</footer><script>
+</style><link rel="stylesheet" href="/mobile-reading.css?v=1"></head><body><header><div><strong>✳ SohStx Health</strong><div class="eyebrow">CLINICAL EDITION</div></div><button id="install">Install Clinical</button></header><main><section><div class="eyebrow">CLINICAL REVIEW / BUILD 1</div><h1>Health data, ready for review.</h1><p>Independent from Personal. Import a CSV or JSON export to examine glucose readings and maintain a local clinical copy.</p></section><section class="panel"><h2>Clinical data</h2><div class="actions"><button id="import">Import file (CSV or JSON)</button><input type="file" id="file" accept=".csv,.json,text/csv,application/json" hidden><button id="export" class="secondary" disabled>Export clinical copy (.json)</button><button id="clear" class="secondary" disabled>Clear clinical copy</button></div><p id="status" class="notice" role="status">No clinical data imported.</p></section><section class="grid"><article class="panel"><div class="muted">Glucose readings</div><div class="stat" id="count">—</div></article><article class="panel"><div class="muted">Mean glucose</div><div class="stat" id="mean">—</div></article><article class="panel"><div class="muted">Observed 70–180 mg/dL</div><div class="stat" id="tir">—</div></article><article class="panel"><div class="muted">Latest observation</div><div class="stat" id="latest" style="font-size:17px">—</div></article></section><section class="panel"><h2>Glucose observations</h2><canvas id="chart" aria-label="Glucose trend chart" role="img"></canvas><p class="muted">Sample-based statistics. Not time-weighted; incomplete sampling may bias results.</p></section><section class="panel"><h2>Imported data preview</h2><p class="muted" id="shape">Import a CSV or JSON export to inspect its structure.</p><div class="scroll" id="preview"></div></section></main><footer>Local-first clinical viewer · Not a medical device · No diagnostic or dosing recommendations</footer><script>
 'use strict';let data=null,readings=[],deferred=null;const $=id=>document.getElementById(id);const store='sohstx-clinical-import-v1';
 function download(obj,name){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function extract(root){const results=[];const seen=new WeakSet();function walk(v,depth){if(depth>6||v===null||typeof v!=='object'||seen.has(v))return;seen.add(v);if(Array.isArray(v)){for(const x of v.slice(0,150000))walk(x,depth+1);return}const keys=Object.keys(v);const type=String(v.type??v.kind??v.recordType??v.eventType??'').toLowerCase();const glucoseType=/glucose|cgm|sensor|historic/.test(type);const candidates=['glucose','glucoseValue','glucose_value','glucose_mg_dl','glucoseMgDl','sgv','mgdl','mg_dL','reading'];let val;for(const k of candidates){if(v[k]!==undefined&&typeof v[k]!=='object'){val=Number(v[k]);break}}const dateKeys=['timestamp','datetime','dateTime','time','date','recordedAt','recorded_at','deviceTimestamp'];let date;for(const k of dateKeys){if(v[k]!=null){const n=typeof v[k]==='number'?(v[k]<1e11?v[k]*1000:v[k]):v[k];const t=new Date(n);if(Number.isFinite(t.getTime())){date=t;break}}}if(Number.isFinite(val)&&val>=20&&val<=600&&date&&(glucoseType||candidates.some(k=>v[k]!==undefined)))results.push({t:date.getTime(),v:val});for(const k of keys)if(v[k]&&typeof v[k]==='object')walk(v[k],depth+1)}walk(root,0);const unique=new Map(results.map(x=>[x.t+'|'+x.v,x]));return [...unique.values()].sort((a,b)=>a.t-b.t)}
 function draw(){const c=$('chart'),ctx=c.getContext('2d'),w=c.clientWidth||300,h=250,dpr=window.devicePixelRatio||1;c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);ctx.strokeStyle='#34536c';ctx.lineWidth=1;for(let i=1;i<5;i++){const y=i*h/5;ctx.beginPath();ctx.moveTo(35,y);ctx.lineTo(w-12,y);ctx.stroke()}if(!readings.length){ctx.fillStyle='#a9c2d5';ctx.fillText('No recognized glucose readings',42,120);return}const minT=readings[0].t,maxT=readings.at(-1).t;const values=readings.map(r=>r.v),minV=Math.min(50,...values)-10,maxV=Math.max(200,...values)+10;const x=t=>35+(w-48)*(t-minT)/Math.max(1,maxT-minT),y=v=>h-20-(h-36)*(v-minV)/(maxV-minV);ctx.strokeStyle='#65c9ed';ctx.lineWidth=2;ctx.beginPath();readings.forEach((r,i)=>{if(i===0||r.t-readings[i-1].t>900000)ctx.moveTo(x(r.t),y(r.v));else ctx.lineTo(x(r.t),y(r.v))});ctx.stroke();ctx.fillStyle='#abc1d4';ctx.font='11px system-ui';ctx.fillText(maxV+'',2,18);ctx.fillText(minV+'',2,h-20)}
-function render(){readings=data?extract(data):[];$('count').textContent=readings.length||'—';$('mean').textContent=readings.length?(Math.round(readings.reduce((s,r)=>s+r.v,0)/readings.length)+' mg/dL'):'—';$('tir').textContent=readings.length?(Math.round(100*readings.filter(r=>r.v>=70&&r.v<=180).length/readings.length)+'%'):'—';$('latest').textContent=readings.length?new Date(readings.at(-1).t).toLocaleString():'—';$('export').disabled=$('clear').disabled=!data;$('preview').replaceChildren();if(data){const keys=Object.keys(data);$('shape').textContent='Top-level fields: '+(keys.join(', ')||'(none)')+'. Recognized glucose readings: '+readings.length+'.';if(readings.length){const table=document.createElement('table');table.innerHTML='<thead><tr><th>Date / time</th><th>Glucose (mg/dL)</th></tr></thead>';const body=document.createElement('tbody');for(const r of readings.slice(-100).reverse()){const tr=document.createElement('tr');for(const value of [new Date(r.t).toLocaleString(),String(r.v)]){const td=document.createElement('td');td.textContent=value;tr.append(td)}body.append(tr)}table.append(body);$('preview').append(table)}}else $('shape').textContent='Import a clinical JSON export to inspect its structure.';draw()}
+function render(){readings=data?extract(data):[];$('count').textContent=readings.length||'—';$('mean').textContent=readings.length?(Math.round(readings.reduce((s,r)=>s+r.v,0)/readings.length)+' mg/dL'):'—';$('tir').textContent=readings.length?(Math.round(100*readings.filter(r=>r.v>=70&&r.v<=180).length/readings.length)+'%'):'—';$('latest').textContent=readings.length?new Date(readings.at(-1).t).toLocaleString():'—';$('export').disabled=$('clear').disabled=!data;$('preview').replaceChildren();if(data){const keys=Object.keys(data);$('shape').textContent='Top-level fields: '+(keys.join(', ')||'(none)')+'. Recognized glucose readings: '+readings.length+'.';if(readings.length){const table=document.createElement('table');table.innerHTML='<thead><tr><th>Date / time</th><th>Glucose (mg/dL)</th></tr></thead>';const body=document.createElement('tbody');for(const r of readings.slice(-100).reverse()){const tr=document.createElement('tr');for(const value of [new Date(r.t).toLocaleString(),String(r.v)]){const td=document.createElement('td');td.textContent=value;tr.append(td)}body.append(tr)}table.append(body);$('preview').append(table)}}else $('shape').textContent='Import a CSV or JSON export to inspect its structure.';draw()}
 $('import').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{if(f.size>25*1024*1024)throw Error('File exceeds 25 MB limit.');const parsed=JSON.parse(await f.text());if(!parsed||typeof parsed!=='object')throw Error('JSON must contain an object or array.');data=parsed;localStorage.setItem(store,JSON.stringify(parsed));$('status').textContent='Imported '+f.name+' locally. '+extract(parsed).length+' glucose readings recognized. Other data preserved in the clinical copy.';render()}catch(err){$('status').textContent='Import failed: '+err.message}e.target.value=''};$('export').onclick=()=>data&&download(data,'sohstx-clinical-copy.json');$('clear').onclick=()=>{if(confirm('Delete the Clinical app’s local imported copy? This does not delete Personal data.')){localStorage.removeItem(store);data=null;$('status').textContent='Clinical copy cleared.';render()}};
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;$('install').hidden=false});$('install').onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null}else $('status').textContent='Use your browser menu → Add to Home screen / Install app.'};window.addEventListener('resize',draw);try{const saved=localStorage.getItem(store);if(saved){data=JSON.parse(saved);$('status').textContent='Restored previously imported local clinical copy.'}}catch(e){$('status').textContent='Stored copy could not be read. Please import again.'}render();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
-</script><script defer src="/lab-analytics.js"></script></body></html>
+</script><script defer src="/lab-analytics.js"></script><script>/* SohStx combined CSV v1 */
+(() => {
+  const columns=['format','type','date','test','result','unit','reference_range','source','date_basis','id','record_json'];
+  const labFields=['date','test','result','unit','reference_range','source','date_basis'];
+  const version='sohstx-combined-v1';
+  const labKey=r=>JSON.stringify([r.date,r.test.trim().toLowerCase(),r.result,r.unit,r.reference_range]);
+  function encode(records,labs){
+    const lines=[columns];
+    function add(row){lines.push(columns.map(k=>row[k]??''));}
+    for(const r of records)add({format:version,type:'record',date:r.date,source:r.source,id:r.id,result:r.raw.bgl,record_json:JSON.stringify(r)});
+    for(const r of labs)add({...r,format:version,type:'lab'});
+    return lines.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
+  }
+  function decode(text){
+    const cells=[],records=[],labs=[];let row=[],field='',quoted=false,closed=false;
+    text=text.replace(/^\uFEFF/,'');
+    for(let i=0;i<text.length;i++){
+      const c=text[i];
+      if(quoted){if(c!=='"')field+=c;else if(text[i+1]==='"'){field+='"';i++;}else{quoted=false;closed=true;}continue;}
+      if(c==='"' && !field && !closed){quoted=true;continue;}
+      if(c===',' || c==='\r' || c==='\n'){row.push(field);field='';closed=false;if(c!==','){if(c==='\r' && text[i+1]==='\n')i++;if(row.some(Boolean))cells.push(row);row=[];}continue;}
+      if(closed||c==='"')throw Error('Invalid CSV quoting.');
+      field+=c;
+    }
+    if(quoted)throw Error('Incomplete CSV.');
+    row.push(field);if(row.some(Boolean))cells.push(row);
+    if(JSON.stringify(cells.shift())!==JSON.stringify(columns))throw Error('Choose a SohStx combined CSV.');
+    for(const values of cells){
+      if(values.length!==columns.length)throw Error('Incomplete row.');
+      const r=Object.fromEntries(columns.map((k,i)=>[k,values[i]]));
+      if(r.format!==version || !Number.isFinite(Date.parse(r.date)))throw Error('Unknown format or invalid date.');
+      if(r.type==='record'){const obj=JSON.parse(r.record_json);if(!r.id||obj.id!==r.id||obj.date!==r.date||obj.source!==r.source||!obj.raw||typeof obj.raw!=='object')throw Error('Invalid health record.');records.push(obj);}
+      else if(r.type==='lab' && r.test.trim() && r.result.trim() && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && new Date(r.date).toISOString().slice(0,10)===r.date)labs.push(Object.fromEntries(labFields.map(k=>[k,r[k]])));
+      else throw Error('Invalid lab or record type.');
+    }
+    if(!records.length&&!labs.length)throw Error('File contains no records.');
+    return {records,labs};
+  }
+  const labsKey='sohstx-lab-history-v1-personal';
+  const readLabs=()=>JSON.parse(localStorage.getItem(labsKey)||'[]');
+  function classify(text,parser){
+    text=text.replace(/^\uFEFF/,'').trim();
+    if(text.startsWith('{')){
+      const obj=JSON.parse(text);
+      if(obj.format==='sohstx-health' && obj.version===1 && Array.isArray(obj.records))return {records:obj.records,labs:[]};
+      if(obj.format==='sohstx-labs-v1')return {records:[],labs:obj.results};
+      if(obj.format==='sohstx-clinical' && Array.isArray(obj.readings)&&Array.isArray(obj.events))return review(obj.readings,obj.events);
+      throw Error('Unrecognized JSON export.');
+    }
+    const rows=parser(text),header=(rows[0]||[]).map(s=>s.trim());
+    if(header.join('|')===columns.join('|'))return decode(text);
+    if(rows.some(r=>['Device Timestamp','Record Type','Historic Glucose mg/dL','Scan Glucose mg/dL'].every(k=>r.some(v=>v.trim()===k))))return 'libre';
+    const items=rows.slice(1).map((values,i)=>{
+      if(values.length!==header.length)throw Error('Column count differs at row '+(i+2));
+      return Object.fromEntries(header.map((k,j)=>[k,values[j].trim()]));
+    });
+    if(['date','test','result'].every(k=>header.includes(k)))return {records:[],labs:items};
+    if(header.join('|')==='timestamp_iso|record_type|glucose_mg_dl|description|details|source')
+      return review(items.filter(r=>r.record_type==='glucose').map(r=>({...r,date:r.timestamp_iso})),items.filter(r=>r.record_type!=='glucose').map(r=>({...r,date:r.timestamp_iso,type:r.record_type})));
+    if(header.join('|')==='date|type|value|details|source')
+      return review(items.filter(r=>r.type==='Glucose').map(r=>({...r,glucose_mg_dl:r.value})),items.filter(r=>r.type!=='Glucose').map(r=>({...r,description:r.details,details:''})));
+    throw Error('File not recognized. Choose a LibreView, lab or SohStx export.');
+  }
+  function review(readings,events){
+    const records=[];
+    for(const item of readings){
+      const value=Number(item.glucose_mg_dl);if(!Number.isFinite(value)||value<=0)throw Error('Invalid glucose result.');
+      const date=new Date(item.date).toISOString();
+      records.push({id:'review:'+date+':'+value,date,source:'libreview',raw:{date,bgl:value,eventType:'GLUCOSE',msgType:'LIBREVIEW',libreKind:'historic',description:'Imported clinical reading'}});
+    }
+    for(const e of events){
+      const date=new Date(e.date).toISOString(),text=String(e.description||''),details=String(e.details||''),type=String(e.type||'event');
+      records.push({id:'review:'+JSON.stringify([date,type,text,details]),date,source:e.source||'manual',raw:{date,bgl:'',eventType:type,text,details}});
+    }
+    return {records,labs:[]};
+  }
+function parseCSV(text){let out=[],row=[],field='',quote=false;for(let i=0;i<text.length;i++){const c=text[i];if(quote){if(c==='"'&&text[i+1]==='"'){field+='"';i++;}else if(c==='"')quote=false;else field+=c;}else if(c==='"')quote=true;else if(c===','){row.push(field);field='';}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x!==''))out.push(row);row=[];field='';}else field+=c;}if(quote)throw Error('Unclosed quoted CSV field');if(row.length||field){row.push(field);out.push(row);}return out;}
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(16).padStart(8,'0');}
+function libreDate(s){const m=String(s||'').trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);if(!m)return null;let hour=Number(m[4])%12;if(m[6].toUpperCase()==='PM')hour+=12;const d=new Date(Number(m[3]),Number(m[1])-1,Number(m[2]),hour,Number(m[5]));if(d.getFullYear()!==Number(m[3])||d.getMonth()!==Number(m[1])-1||d.getDate()!==Number(m[2])||d.getHours()!==hour||d.getMinutes()!==Number(m[5]))return null;return d.toISOString();}
+function libreRecord(row){const date=libreDate(row['Device Timestamp']);if(!date)return null;const historic=String(row['Historic Glucose mg/dL']||'').trim(),scan=String(row['Scan Glucose mg/dL']||'').trim();const valid=x=>x!==''&&Number.isFinite(Number(x))&&Number(x)>0;const hasHistoric=valid(historic),hasScan=valid(scan);const notes=String(row.Notes||'').trim();const details=[];for(const [key,label] of [['Carbohydrates (grams)','Carbohydrates'],['Carbohydrates (servings)','Carb servings'],['Long-Acting Insulin (units)','Long-acting insulin'],['Rapid-Acting Insulin (units)','Rapid-acting insulin'],['Meal Insulin (units)','Meal insulin'],['Correction Insulin (units)','Correction insulin'],['Strip Glucose mg/dL','Strip glucose'],['Ketone mmol/L','Ketones'],['Non-numeric Food','Food'],['Non-numeric Long-Acting Insulin','Long-acting insulin note'],['Non-numeric Rapid-Acting Insulin','Rapid-acting insulin note']]){if(String(row[key]||'').trim())details.push(label+': '+String(row[key]).trim());}
+const device=String(row['Serial Number']||row.Device||'unknown').trim();const out=[];if(hasHistoric||hasScan){const value=hasHistoric?historic:scan;const kind=hasHistoric?'historic':'scan';const raw={date,bgl:value,eventType:'GLUCOSE',msgType:'LIBREVIEW',description:kind+' glucose reading',libreKind:kind,libreDevice:device};out.push({id:'libreview:glucose:'+hash(device+'|'+date+'|'+kind)+':'+device.length,source:'libreview',date,raw});}
+if(notes||details.length){const text=notes||'LibreView logged event';const raw={date,bgl:'',eventType:'LIBREVIEW_EVENT',msgType:'LIBREVIEW',text,details:details.join(' · '),description:text,libreDevice:device};out.push({id:'libreview:event:'+hash(device+'|'+date+'|'+text+'|'+details.join('|')),source:'libreview',date,raw});}return out;}
+
+  function unpack(text){
+    const result=classify(text,parseCSV);
+    if(result!=='libre')return result;
+    const rows=parseCSV(text.replace(/^\uFEFF/,'')),i=rows.findIndex(row=>row.includes('Device Timestamp')&&row.includes('Historic Glucose mg/dL'));
+    const records=rows.slice(i+1).flatMap(row=>libreRecord(Object.fromEntries(rows[i].map((name,j)=>[name.trim(),row[j]||''])))||[]);
+    if(!records.length)throw Error('No supported LibreView readings or events.');
+    return {records,labs:[]};
+  }
+  if(typeof module!=='undefined'&&module.exports){module.exports={unpack,encode};return;}
+  window.addEventListener('DOMContentLoaded',()=>{
+    const file=document.getElementById('file'),status=document.getElementById('status');
+    const legacy=file.onchange;
+    document.querySelectorAll('.lab-import').forEach(b=>{b.hidden=true;b.style.display='none';});
+    document.querySelectorAll('.lab-actions button').forEach(b=>{if(b.textContent==='Import combined CSV')b.style.display='none';});
+    file.onchange=async event=>{
+      const f=file.files[0];if(!f)return;
+      try{
+        const text=(await f.text()).trim();
+        if(text.startsWith('{')){
+          const obj=JSON.parse(text);
+          if(obj.format!=='sohstx-health'&&obj.format!=='sohstx-labs-v1')return await legacy.call(file,event);
+        }
+        const incoming=unpack(text),labsKey='sohstx-lab-history-v1-clinical';
+        const labs=JSON.parse(localStorage.getItem(labsKey)||'[]'),known=new Set(labs.map(labKey)),before=labs.length;
+        for(const item of incoming.labs){
+          const r=Object.fromEntries(labFields.map(k=>[k,String(item[k]??'').trim()]));
+          if(!r.test||!r.result||!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||new Date(r.date).toISOString().slice(0,10)!==r.date)throw Error('Invalid lab row.');
+          if(!known.has(labKey(r))){labs.push(r);known.add(labKey(r));}
+        }
+        const copy=JSON.parse(JSON.stringify(data||{format:'sohstx-clinical',version:1}));
+        copy.readings??=[];copy.events??=[];
+        const glucoseKey=r=>JSON.stringify([Date.parse(r.date),Number(r.glucose_mg_dl)]);
+        const eventKey=r=>JSON.stringify([Date.parse(r.date),r.type,r.description,r.details]);
+        const g=new Set(copy.readings.map(glucoseKey)),e=new Set(copy.events.map(eventKey));
+        let ng=0,ne=0;
+        for(const r of incoming.records){
+          if(!r.raw||!Number.isFinite(Date.parse(r.date)))throw Error('Invalid health record.');
+          if(r.raw.bgl!==''&&r.raw.bgl!=null){
+            const v=Number(r.raw.bgl);if(!Number.isFinite(v)||v<=0)throw Error('Invalid glucose value.');
+            const item={date:r.date,glucose_mg_dl:v,source:r.source};const k=glucoseKey(item);
+            if(!g.has(k)){copy.readings.push(item);g.add(k);ng++;}
+          }else{
+            const item={date:r.date,type:r.raw.eventType||'event',description:r.raw.text||r.raw.description||'',details:r.raw.details||'',source:r.source};const k=eventKey(item);
+            if(!e.has(k)){copy.events.push(item);e.add(k);ne++;}
+          }
+        }
+        if(ng||ne){localStorage.setItem(store,JSON.stringify(copy));data=copy;render();}
+        if(labs.length!==before){localStorage.setItem(labsKey,JSON.stringify(labs));document.querySelector('#view-labs .lab-wrap select')?.dispatchEvent(new Event('change'));}
+        status.textContent='Added '+ng+' glucose readings, '+ne+' events and '+(labs.length-before)+' labs. Existing matches skipped.';
+      }catch(err){status.textContent='Import did not finish: '+err.message;}finally{file.value='';}
+    };
+  });
+})();
+</script></body></html>
