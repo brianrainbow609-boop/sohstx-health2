@@ -50,7 +50,28 @@
     return {sums,count,incomplete};
   }
   function formatMacros(v){return nutrients.map(([k,label,unit])=>label+' '+(v[k]==null?'—':Number(v[k].toFixed(1))+' '+unit)).join(' · ');}
-  if(typeof module!=='undefined'&&module.exports){module.exports={makeMeal,isMeal,estimate,rolling};return;}
+  function summarizeMeals(records, days, now=new Date()){
+    const start=new Date(now);start.setHours(0,0,0,0);start.setDate(start.getDate()-days+1);
+    const byDay=new Map(),foods=new Map(), sums={}, counts={};
+    let meals=0,incomplete=0;
+    for(const row of records){
+      const time=new Date(row.date);
+      if(!isMeal(row)||!(time>=start&&time<=now))continue;
+      const key=[time.getFullYear(),String(time.getMonth()+1).padStart(2,'0'),String(time.getDate()).padStart(2,'0')].join('-');
+      if(!byDay.has(key))byDay.set(key,{date:key,meals:0,values:{}});
+      const day=byDay.get(key),v=savedValues(row.raw);day.meals++;meals++;
+      if(nutrients.some(([k])=>!Number.isFinite(v[k]))||row.raw.mealExtra&&!row.raw.manualTotals)incomplete++;
+      for(const [k] of nutrients)if(Number.isFinite(v[k]))day.values[k]=(day.values[k]??0)+v[k];
+      for(const item of row.raw.mealItems||[]){
+        if(!Object.hasOwn(profile,item.name)||!Number.isFinite(item.quantity)||item.quantity<=0)continue;
+        const k=JSON.stringify([item.name,item.unit]),food=foods.get(k)||{name:item.name,unit:item.unit,quantity:0,kcal:0};
+        food.quantity+=item.quantity;food.kcal+=estimate([item]).kcal;foods.set(k,food);
+      }
+    }
+    for(const day of byDay.values())for(const [k,v] of Object.entries(day.values)){sums[k]=(sums[k]??0)+v;counts[k]=(counts[k]??0)+1;}
+    return {meals,incomplete,days:[...byDay.values()].sort((a,b)=>b.date.localeCompare(a.date)),foods:[...foods.values()].sort((a,b)=>b.kcal-a.kcal),sums,counts};
+  }
+  if(typeof module!=='undefined'&&module.exports){module.exports={makeMeal,isMeal,estimate,rolling,summarizeMeals};return;}
   function setup(){
     const tabs=document.querySelector('.tabs');
     if(!tabs||!document.getElementById('eventForm')||document.getElementById('view-meals'))return;
@@ -102,7 +123,36 @@
     const dayTitle=document.createElement('h3');dayTitle.textContent='Last 24 hours';
     const amounts=document.createElement('strong'), coverage=document.createElement('p');
     day.append(dayTitle,amounts,coverage);composer.append(day);
+    const insights=document.createElement('section');insights.className='panel meal-insights';
+    view.querySelector('.meal-list').parentElement.before(insights);
+    insights.innerHTML='<h2>Nutrition patterns</h2><label>Review period<select><option value="7">Last 7 calendar days</option><option value="30">Last 30 calendar days</option></select></label><p class="coverage"></p><div class="metrics averages"></div><h3>Foods by estimated calories</h3><div class="foods"></div><h3>Day by day</h3><div class="tablewrap daily"></div>';
+    const period=insights.querySelector('select');
+    const node=(tag,text)=>Object.assign(document.createElement(tag),{textContent:text});
+    const rounded=n=>n.toLocaleString(undefined,{maximumFractionDigits:1});
+    function renderInsights(){
+      const report=summarizeMeals(visibleEvents(),Number(period.value));
+      insights.querySelector('.coverage').textContent=report.meals+' meals on '+report.days.length+' of '+period.value+' days, including today. Averages use days with a recorded value. '+report.incomplete+' meals have partial or missing nutrition.';
+      const cards=insights.querySelector('.averages');cards.replaceChildren();
+      for(const [k,title,unit] of nutrients){
+        const card=node('article','');card.className='metric';const n=report.counts[k]||0;
+        card.append(node('span',title+' / logged day'),node('div',n?rounded(report.sums[k]/n)+' '+unit:'—'),node('small',n+' days with data'));cards.append(card);
+      }
+      const foods=insights.querySelector('.foods');foods.replaceChildren();
+      foods.append(node('p',report.foods.length?'Based on food-button portions. Manual meal totals can differ.':'Log a meal with food buttons to see what contributes the most calories.'));
+      for(const food of report.foods){
+        const label=food.name==='Cod'?'Cod (3 oz portions)':food.name;
+        foods.append(node('div',label+' · '+rounded(food.quantity)+' '+food.unit+(food.quantity>1?'s':'')+' · '+rounded(food.kcal)+' kcal'));
+        const bar=document.createElement('progress');bar.max=report.foods[0].kcal||1;bar.value=food.kcal;bar.setAttribute('aria-label',label+' estimated calories');bar.style.width='100%';foods.append(bar);
+      }
+      const table=node('table',''),head=table.createTHead().insertRow();
+      for(const t of ['Date','Meals','kcal','Protein (g)','Carbs (g)','Fat (g)'])head.append(node('th',t));
+      const body=table.createTBody();
+      for(const d of report.days){const tr=body.insertRow();for(const t of [d.date,d.meals,...nutrients.map(([k])=>d.values[k]==null?'—':rounded(d.values[k]))])tr.insertCell().textContent=t;}
+      insights.querySelector('.daily').replaceChildren(report.meals?table:node('p','No meals logged in this period.'));
+    }
+    period.onchange=renderInsights;
     function updateDay(){
+      if(view.classList.contains("active"))renderInsights();
       const result=rolling(visibleEvents(),Date.now());
       amounts.textContent=formatMacros(result.count?result.sums:{kcal:0,protein:0,carbs:0,fat:0});
       coverage.textContent=result.count+' logged meals'+(result.incomplete?' · '+result.incomplete+' with missing or partial nutrition':'');
@@ -139,6 +189,7 @@
     placeComposer();
     let limit=20;
     function history(){
+      renderInsights();
       const list=view.querySelector('.meal-list');list.replaceChildren();
       const meals=visibleEvents().filter(isMeal).sort((a,b)=>Date.parse(b.date)-Date.parse(a.date));
       if(!meals.length)list.textContent='Your saved meals will appear here.';
@@ -180,3 +231,4 @@
   }
   if(document.readyState==='complete')setup();else window.addEventListener('load',setup,{once:true});
 })();
+      
