@@ -19,3 +19,53 @@
 .v22-hint{font-size:12px;color:#a8bfd4}
 @media(max-width:550px){.v22-head{flex-direction:column}.v22-close{align-self:flex-end}.v22-stats{grid-template-columns:repeat(2,1fr)}}
 @media print{.v22-overlay{display:none!important}}
+/* SohStx Personal: portrait phone layout */
+@media (max-width: 640px),
+       (orientation: portrait) and (max-width: 1100px) {
+  .hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-actions button {
+    width: 100%;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    position: static;
+  }
+
+  .tabs .tab {
+    min-width: 0;
+    min-height: 44px;
+    white-space: normal;
+    font-size: clamp(14px, 3.4vw, 28px);
+  }
+
+  .metrics, .v21-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .twocol, .v21-twocol, .insights {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel, .metric, .chartwrap, .twocol > * {
+    min-width: 0;
+  }
+
+  .metric span, .panel p, .hero p, #notice {
+    font-size: clamp(14px, 3.5vw, 30px);
+  }
+
+  .sectionhead {
+    flex-wrap: wrap;
+  }
+
+  .lab-scroll, .tablewrap {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+       }
