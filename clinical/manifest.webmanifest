@@ -1,0 +1,1 @@
+{"id":"/clinical/","name":"SohStx Health Clinical","short_name":"SohStx Clinical","description":"Independent local-first clinical health data viewer","start_url":"/clinical/","scope":"/clinical/","display":"standalone","background_color":"#091522","theme_color":"#102337","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
