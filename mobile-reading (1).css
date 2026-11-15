@@ -1,0 +1,105 @@
+
+    @media screen and (max-width: 700px),
+           screen and (orientation: portrait) and (max-width: 1400px) {
+      :root {
+        --read-body: clamp(18px, 3.55vw, 34px);
+        --read-label: clamp(16px, 3.1vw, 30px);
+        --read-caption: clamp(15px, 2.85vw, 27px);
+        --read-heading: clamp(23px, 4.4vw, 42px);
+        --read-value: clamp(28px, 5.2vw, 50px);
+      }
+
+      body {
+        font-size: var(--read-body);
+        line-height: 1.45;
+      }
+
+      body :is(p, .subtle, .muted, .notice, .chartdetail, #notice) {
+        font-size: var(--read-body) !important;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+      }
+
+      body :is(h2, .sectionhead h2, .lab-expanded h2) {
+        font-size: var(--read-heading) !important;
+        line-height: 1.2;
+      }
+
+      body :is(h3, header strong, .timeline strong, .timeline b) {
+        font-size: var(--read-body) !important;
+        line-height: 1.35;
+      }
+
+      body :is(label, button, select, textarea, input, summary,
+               .v21-link, th, td, .legend, .metric > span,
+               .v21-metric span, .lab-card strong) {
+        font-size: var(--read-label) !important;
+        line-height: 1.35;
+      }
+
+      body :is(small, time, footer, .eyebrow, .privacy,
+               .metric p, .timeline div, .timeline span,
+               .timeline small, .lab-card small) {
+        font-size: var(--read-caption) !important;
+        line-height: 1.4;
+      }
+
+      body :is(.metric b, .stat, .v21-metric strong, .lab-card b) {
+        font-size: var(--read-value) !important;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+      }
+
+      body #latest {
+        font-size: var(--read-value) !important;
+      }
+
+      /* Clinical's latest observation is a date and time. */
+      body .grid #latest {
+        font-size: var(--read-body) !important;
+      }
+
+      body :is(button, select, input:not([type="checkbox"]):not([type="file"])) {
+        min-height: 48px;
+        max-width: 100%;
+      }
+
+      body button {
+        height: auto;
+        white-space: normal;
+      }
+
+      body :is(.actions, .v21-actions, .sectionhead, header) {
+        flex-wrap: wrap;
+      }
+
+      body :is(.metrics, main > .grid, .v21-metric-grid) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      body :is(.twocol, .v21-twocol) {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body :is(.panel, .metric, .grid > *, .twocol > *) {
+        min-width: 0;
+      }
+
+      body :is(.scroll, .tablewrap, .lab-scroll) {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+
+      body :is(th, td) {
+        padding: 0.55em 0.65em;
+      }
+    }
+  
+@media screen and (max-width:700px), screen and (orientation:portrait) and (max-width:1400px){
+ .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .tabs .tab{min-width:0;white-space:normal}
+ .hero{flex-direction:column;align-items:stretch}
+ .hero-actions button{width:100%}
+ main, header{max-width:100%;padding-inline:clamp(14px,3vw,30px)}
+ .sectionhead,.metric div{flex-wrap:wrap}
+}
