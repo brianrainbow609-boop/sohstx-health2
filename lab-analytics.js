@@ -84,3 +84,108 @@
     const link=el('a','');link.href=url;link.download='SohStx-Clinical-Labs.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };render();
 })();
+
+/* Lab explorer for Personal and Clinical */
+(() => {
+  const panel = document.querySelector('#view-labs');
+  const picker = panel.querySelector('select');
+  const box = document.createElement('section');
+  panel.querySelector('.lab-change').after(box);
+  box.innerHTML = `<details><summary>About this lab</summary><p></p></details>
+  <h3>Compare results</h3><label>Earlier result <select></select></label><p class="delta"></p>
+  <label>Overlay <select></select></label><div class="plot"></div><small class="legend"></small>`;
+  box.style.cssText='padding:14px 0;min-width:0';
+  box.querySelector('summary').style.cssText='padding:12px;background:#203850;border-radius:10px;cursor:pointer;font-weight:bold';
+  const [baseline, overlay] = box.querySelectorAll('select');
+  const clinical = location.pathname.startsWith('/clinical/');
+  const descriptions = {
+    'hemoglobin a1c':'A1c measures the share of hemoglobin with glucose attached. It reflects roughly three months of blood glucose.',
+    'mean blood glucose':'When reported with A1c, this is an estimated average calculated from A1c. A CGM average comes from sensor readings.',
+    'glucose':'Blood glucose measures sugar in the blood at the time the sample was taken.',
+    'creatinine':'Creatinine is a waste product from muscle activity. Its blood concentration is used to estimate kidney filtration.',
+    'egfr':'Estimated glomerular filtration rate describes how quickly the kidneys filter blood. A result such as >90 gives a lower bound.',
+    'bun':'Blood urea nitrogen measures nitrogen from urea, a waste product of protein breakdown.',
+    'alt':'ALT is an enzyme found mainly in liver cells. The test measures its activity in blood.',
+    'ast':'AST is an enzyme found in liver, muscle and other tissues.',
+    'alkaline phosphatase':'This enzyme comes mainly from the liver and bones.',
+    'total bilirubin':'Bilirubin is a pigment produced as red blood cells break down.',
+    'albumin':'Albumin is a protein made by the liver that carries substances in the blood.',
+    'globulin':'Globulins are a group of blood proteins that include antibodies.',
+    'total protein':'Total protein includes albumin and globulins in the blood.',
+    'sodium':'Sodium is an electrolyte involved in fluid balance and nerve function.',
+    'potassium':'Potassium is an electrolyte used by muscles, nerves and the heart.',
+    'chloride':'Chloride is an electrolyte involved in fluid and acid-base balance.',
+    'co2':'On a metabolic panel, total carbon dioxide mainly reflects bicarbonate, which helps buffer acids.',
+    'anion gap':'A calculated difference between measured electrolytes, used when assessing acid-base balance.',
+    'calcium':'Total calcium measures circulating calcium, including calcium bound to proteins.',
+    'rbc':'A count of the red blood cells that carry oxygen.',
+    'wbc':'A count of white blood cells, which participate in immune responses.',
+    'hemoglobin':'The oxygen-carrying protein inside red blood cells.',
+    'hematocrit':'The percentage of blood volume made up of red blood cells.',
+    'mcv':'The average size of a red blood cell.',
+    'mch':'The average amount of hemoglobin per red blood cell.',
+    'mchc':'The average concentration of hemoglobin inside red blood cells.',
+    'rdw':'A measure of variation in red blood cell size.',
+    'mpv':'The average size of platelets.',
+    'platelet count':'A count of platelets, which help blood clot.',
+    'tsh 3rd generation':'TSH is the pituitary hormone that signals the thyroid to produce thyroid hormones.',
+    'free t4':'The portion of thyroxine in the blood that is unbound to proteins.',
+    'vitamin b-12':'Measures circulating vitamin B12, needed for nerve function and red blood cell formation.',
+    'vit d, 25-hydroxy':'The main blood test used to assess vitamin D status.',
+    'crp':'C-reactive protein is a general marker of inflammation.'
+  };
+  const number = s => /^[-+]?(?:\d+\.?\d*|\.\d+)$/.test(String(s).trim()) ? Number(s) : NaN;
+  function explain(name){
+    const n=name.toLowerCase();
+    if(descriptions[n])return descriptions[n];
+    if(n.startsWith('hiv'))return n.includes('p24')?'Measures reactivity to the HIV p24 antigen.':n.includes('ag/ab')?'A combined screening test for HIV antigen and antibodies.':'Reports antibody reactivity for the indicated HIV type.';
+    if(/neutrophil|monocyte|lymph|basophil|eosinophil|immature granulocyte/.test(n))return name.split(/ %| Abs| Percent/)[0]+' are a type or stage of white blood cell. This result reports '+(/%|percent/.test(n)?'their percentage of white cells.':'their absolute count in blood.');
+    return 'Use the reported unit and the laboratory’s own reference range when reviewing this test.';
+  }
+  function render(reset=false){
+    const all=JSON.parse(localStorage.getItem('sohstx-lab-history-v1-'+(clinical?'clinical':'personal'))||'[]');
+    const group=r=>JSON.stringify([r.test.toLowerCase(),r.unit]);
+    const rows=all.filter(r=>group(r)===picker.value).sort((a,b)=>b.date.localeCompare(a.date));
+    box.hidden=!rows.length;if(!rows.length)return;
+    const latest=rows[0];
+    box.querySelector('summary').textContent='About '+latest.test;
+    box.querySelector('details p').textContent=explain(latest.test);
+    const before=baseline.value, over=overlay.value;
+    baseline.replaceChildren(...rows.slice(1).map((r,i)=>new Option(r.date+' · '+r.result+' '+r.unit,i+1)));
+    if(!reset && [...baseline.options].some(o=>o.value===before))baseline.value=before;
+    const other=rows[Number(baseline.value)];
+    let msg='Latest: '+latest.date+' · '+latest.result+' '+latest.unit;
+    if(baseline.value && other){const d=number(latest.result)-number(other.result);if(Number.isFinite(d))msg+=' · Change: '+(d>0?'+':'')+Number(d.toFixed(4))+' '+latest.unit;}
+    box.querySelector('.delta').textContent=msg;
+    const groups=new Map(all.filter(r=>group(r)!==picker.value && Number.isFinite(number(r.result))).map(r=>[group(r),r.test+' ('+r.unit+')']));
+    const glucose=clinical?(typeof readings==='undefined'?[]:readings.map(r=>[r.t,r.v])):(typeof validReadings==='function'?validReadings().map(r=>[r.time,r.value]):[]);
+    const days=new Map();
+    for(const [time,value] of glucose){const d=new Date(time);const local=new Date(+d-d.getTimezoneOffset()*60000).toISOString().slice(0,10);const pair=days.get(local)||[0,0];pair[0]+=value;pair[1]++;days.set(local,pair);}
+    if(days.size)groups.set('cgm','CGM daily mean (mg/dL)');
+    overlay.replaceChildren(new Option('None',''),...[...groups].map(([k,v])=>new Option(v,k)));
+    if(groups.has(over))overlay.value=over;
+    const points=rs=>rs.map(r=>[Date.parse(r.date),number(r.result)]).filter(p=>Number.isFinite(p[1])).sort((a,b)=>a[0]-b[0]);
+    const a=points(rows), b=overlay.value==='cgm'?points([...days].map(([date,[s,n]])=>({date,result:s/n}))):points(all.filter(r=>group(r)===overlay.value));
+    const plot=box.querySelector('.plot');plot.replaceChildren();
+    const legend=box.querySelector('.legend');legend.textContent='';
+    if(!a.length){plot.textContent='This test has no exact numeric results to graph. See the reported values below.';return;}
+    const dates=[...a,...b].map(p=>p[0]);const lo=Math.min(...dates),hi=Math.max(...dates);
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 400 165');svg.style.cssText='width:100%;height:auto;background:#101e30;border-radius:10px;margin-top:10px';svg.setAttribute('role','img');svg.setAttribute('aria-label','Lab trend by date for '+latest.test);plot.append(svg);
+    function shape(tag,attrs,label){const e=document.createElementNS(svg.namespaceURI,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);if(label)e.textContent=label;svg.append(e);return e;}
+    function line(ps,color){
+      const vals=ps.map(p=>p[1]),min=Math.min(...vals),max=Math.max(...vals);
+      const coords=ps.map(([t,v])=>[hi===lo?200:18+364*(t-lo)/(hi-lo),min===max?76:131-107*(v-min)/(max-min)]);
+      shape('polyline',{points:coords.map(p=>p.join(',')).join(' '),stroke:color,fill:'none','stroke-width':2});
+      coords.forEach(([cx,cy],i)=>{const dot=shape('circle',{cx,cy,r:4,fill:color});dot.onclick=()=>{legend.textContent=new Date(ps[i][0]).toISOString().slice(0,10)+' · '+(color==='#64dfbc'?latest.test+' ('+latest.unit+')':groups.get(overlay.value))+' · '+ps[i][1].toLocaleString();};});
+      return min+'–'+max;
+    }
+    const range=line(a,'#64dfbc');let label='Green: '+latest.test+' ('+range+' '+latest.unit+')';
+    if(b.length)label+=' · Blue: '+groups.get(overlay.value)+' ('+line(b,'#79baff')+'). Each line uses its own vertical scale.';
+    legend.textContent=label+' · Exact numeric results only.';
+    for(const [t,x,anchor] of [[lo,12,'start'],[hi,388,'end']])shape('text',{x,y:156,fill:'#bed0e4','font-size':13,'text-anchor':anchor},new Date(t).toISOString().slice(0,10));
+  }
+  baseline.onchange=()=>render();overlay.onchange=()=>render();
+  picker.addEventListener('change',()=>render(true));
+  new MutationObserver(()=>render()).observe(panel.querySelector('tbody'),{childList:true});
+  render();
+})();
