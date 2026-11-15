@@ -268,3 +268,38 @@
   }
   new MutationObserver(drawGallery).observe(picker,{childList:true});drawGallery();
 })();
+// Larger lab text on phones
+(() => {
+  const style = document.createElement('style');
+  style.textContent = `
+    @media (max-width: 640px),
+           (orientation: portrait) and (max-width: 1100px) {
+      #view-labs .lab-card {
+        padding: clamp(12px, 2vw, 20px);
+        gap: 8px;
+        line-height: 1.3;
+      }
+
+      #view-labs .lab-card strong {
+        font-size: clamp(18px, 3.5vw, 34px);
+      }
+
+      #view-labs .lab-card b {
+        font-size: clamp(23px, 4.5vw, 44px);
+        overflow-wrap: anywhere;
+      }
+
+      #view-labs .lab-card small {
+        font-size: clamp(15px, 2.9vw, 28px);
+        color: #dce8f3;
+      }
+
+      #view-labs .lab-actions button,
+      #view-labs .lab-expanded :is(button, label, select, summary, p, small, td, th) {
+        font-size: clamp(16px, 3.2vw, 30px);
+        line-height: 1.4;
+      }
+    }
+  `;
+  document.head.append(style);
+})();
