@@ -407,3 +407,135 @@
   document.getElementById(style.id)?.remove();
   document.head.append(style);
 })();
+/* SohStx combined CSV v1 */
+(() => {
+  const columns=['format','type','date','test','result','unit','reference_range','source','date_basis','id','record_json'];
+  const labFields=['date','test','result','unit','reference_range','source','date_basis'];
+  const version='sohstx-combined-v1';
+  const labKey=r=>JSON.stringify([r.date,r.test.trim().toLowerCase(),r.result,r.unit,r.reference_range]);
+  function encode(records,labs){
+    const lines=[columns];
+    function add(row){lines.push(columns.map(k=>row[k]??''));}
+    for(const r of records)add({format:version,type:'record',date:r.date,source:r.source,id:r.id,result:r.raw.bgl,record_json:JSON.stringify(r)});
+    for(const r of labs)add({...r,format:version,type:'lab'});
+    return lines.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
+  }
+  function decode(text){
+    const cells=[],records=[],labs=[];let row=[],field='',quoted=false,closed=false;
+    text=text.replace(/^\uFEFF/,'');
+    for(let i=0;i<text.length;i++){
+      const c=text[i];
+      if(quoted){if(c!=='"')field+=c;else if(text[i+1]==='"'){field+='"';i++;}else{quoted=false;closed=true;}continue;}
+      if(c==='"' && !field && !closed){quoted=true;continue;}
+      if(c===',' || c==='\r' || c==='\n'){row.push(field);field='';closed=false;if(c!==','){if(c==='\r' && text[i+1]==='\n')i++;if(row.some(Boolean))cells.push(row);row=[];}continue;}
+      if(closed||c==='"')throw Error('Invalid CSV quoting.');
+      field+=c;
+    }
+    if(quoted)throw Error('Incomplete CSV.');
+    row.push(field);if(row.some(Boolean))cells.push(row);
+    if(JSON.stringify(cells.shift())!==JSON.stringify(columns))throw Error('Choose a SohStx combined CSV.');
+    for(const values of cells){
+      if(values.length!==columns.length)throw Error('Incomplete row.');
+      const r=Object.fromEntries(columns.map((k,i)=>[k,values[i]]));
+      if(r.format!==version || !Number.isFinite(Date.parse(r.date)))throw Error('Unknown format or invalid date.');
+      if(r.type==='record'){const obj=JSON.parse(r.record_json);if(!r.id||obj.id!==r.id||obj.date!==r.date||obj.source!==r.source||!obj.raw||typeof obj.raw!=='object')throw Error('Invalid health record.');records.push(obj);}
+      else if(r.type==='lab' && r.test.trim() && r.result.trim() && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && new Date(r.date).toISOString().slice(0,10)===r.date)labs.push(Object.fromEntries(labFields.map(k=>[k,r[k]])));
+      else throw Error('Invalid lab or record type.');
+    }
+    if(!records.length&&!labs.length)throw Error('File contains no records.');
+    return {records,labs};
+  }
+  const labsKey='sohstx-lab-history-v1-personal';
+  const readLabs=()=>JSON.parse(localStorage.getItem(labsKey)||'[]');
+  function classify(text,parser){
+    text=text.replace(/^\uFEFF/,'').trim();
+    if(text.startsWith('{')){
+      const obj=JSON.parse(text);
+      if(obj.format==='sohstx-health' && obj.version===1 && Array.isArray(obj.records))return {records:obj.records,labs:[]};
+      if(obj.format==='sohstx-labs-v1')return {records:[],labs:obj.results};
+      if(obj.format==='sohstx-clinical' && Array.isArray(obj.readings)&&Array.isArray(obj.events))return review(obj.readings,obj.events);
+      throw Error('Unrecognized JSON export.');
+    }
+    const rows=parser(text),header=(rows[0]||[]).map(s=>s.trim());
+    if(header.join('|')===columns.join('|'))return decode(text);
+    if(rows.some(r=>['Device Timestamp','Record Type','Historic Glucose mg/dL','Scan Glucose mg/dL'].every(k=>r.some(v=>v.trim()===k))))return 'libre';
+    const items=rows.slice(1).map((values,i)=>{
+      if(values.length!==header.length)throw Error('Column count differs at row '+(i+2));
+      return Object.fromEntries(header.map((k,j)=>[k,values[j].trim()]));
+    });
+    if(['date','test','result'].every(k=>header.includes(k)))return {records:[],labs:items};
+    if(header.join('|')==='timestamp_iso|record_type|glucose_mg_dl|description|details|source')
+      return review(items.filter(r=>r.record_type==='glucose').map(r=>({...r,date:r.timestamp_iso})),items.filter(r=>r.record_type!=='glucose').map(r=>({...r,date:r.timestamp_iso,type:r.record_type})));
+    if(header.join('|')==='date|type|value|details|source')
+      return review(items.filter(r=>r.type==='Glucose').map(r=>({...r,glucose_mg_dl:r.value})),items.filter(r=>r.type!=='Glucose').map(r=>({...r,description:r.details,details:''})));
+    throw Error('File not recognized. Choose a LibreView, lab or SohStx export.');
+  }
+  function review(readings,events){
+    const records=[];
+    for(const item of readings){
+      const value=Number(item.glucose_mg_dl);if(!Number.isFinite(value)||value<=0)throw Error('Invalid glucose result.');
+      const date=new Date(item.date).toISOString();
+      records.push({id:'review:'+date+':'+value,date,source:'libreview',raw:{date,bgl:value,eventType:'GLUCOSE',msgType:'LIBREVIEW',libreKind:'historic',description:'Imported clinical reading'}});
+    }
+    for(const e of events){
+      const date=new Date(e.date).toISOString(),text=String(e.description||''),details=String(e.details||''),type=String(e.type||'event');
+      records.push({id:'review:'+JSON.stringify([date,type,text,details]),date,source:e.source||'manual',raw:{date,bgl:'',eventType:type,text,details}});
+    }
+    return {records,labs:[]};
+  }
+  async function merge(payload){
+    if(!Array.isArray(payload.records)||!Array.isArray(payload.labs))throw Error('Invalid export structure.');
+    const labs=readLabs(),keys=new Set(labs.map(labKey)),before=labs.length;
+    for(const item of payload.labs){
+      const r=Object.fromEntries(labFields.map(k=>[k,String(item[k]??'').trim()]));
+      if(!r.test||!r.result||!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||new Date(r.date).toISOString().slice(0,10)!==r.date)throw Error('Invalid lab row.');
+      if(!keys.has(labKey(r))){labs.push(r);keys.add(labKey(r));}
+    }
+    const existing=await getAll(), ids=new Set(existing.map(r=>r.id));
+    const identity=r=>JSON.stringify([Date.parse(r.date),r.raw.bgl!==''&&r.raw.bgl!=null?Number(r.raw.bgl):[r.raw.eventType,r.raw.text||r.raw.description||'',r.raw.details||'']]);
+    const signatures=new Set(existing.map(identity)),fresh=[];
+    for(const r of payload.records){
+      if(!r||typeof r.id!=='string'||!r.id||!Number.isFinite(Date.parse(r.date))||!r.raw||typeof r.raw!=='object'||typeof r.source!=='string')throw Error('Invalid health record.');
+      const sig=identity(r);
+      if(!ids.has(r.id)&&!(r.id.startsWith('review:')&&signatures.has(sig)))fresh.push(r);
+      ids.add(r.id);signatures.add(sig);
+    }
+    if(fresh.length)await transaction('readwrite',s=>fresh.forEach(r=>s.add(r)));
+    if(labs.length!==before)localStorage.setItem(labsKey,JSON.stringify(labs));
+    await refresh();
+    document.querySelector('#view-labs .lab-wrap select')?.dispatchEvent(new Event('change'));
+    return fresh.length+' health records and '+(labs.length-before)+' labs added.';
+  }
+  if(typeof module!=='undefined'&&module.exports){module.exports={classify,encode};return;}
+  function setup(){
+    const home=document.getElementById('importBtn');if(!home||document.getElementById('view-data'))return;
+    const btn=t=>{const b=document.createElement('button');b.type='button';b.textContent=t;return b;};
+    const tab=btn('Data');tab.className='tab';tab.dataset.tab='data';document.querySelector('.tabs').append(tab);
+    const view=document.createElement('section');view.className='view';view.id='view-data';
+    view.innerHTML='<section class="panel"><h2>Import &amp; export</h2><p>Import LibreView, monthly labs or a SohStx CSV or JSON file.</p><div class="v21-actions data-import"></div><h3>Complete backup &amp; Clinical handoff</h3><p>Includes saved readings, journal entries and lab results.</p><div class="v21-actions data-backup"></div><details><summary>Other export formats</summary><div class="v21-actions data-other"></div></details></section>';
+    document.querySelector('main footer').before(view);
+    tab.addEventListener('click',()=>{setTab('data');requestAnimationFrame(()=>document.getElementById('pageTitle').textContent='Import & export');});
+    const input=document.createElement('input');input.type='file';input.accept='.csv,.json';input.hidden=true;view.append(input);
+    const pick=e=>{e.preventDefault();e.stopImmediatePropagation();input.click();};
+    home.textContent='Import file';home.addEventListener('click',pick,true);
+    // The header picker remains visible on the Data tab too.
+    let busy=false;
+    input.onchange=async()=>{
+      const f=input.files[0];if(!f||busy)return;busy=true;home.disabled=true;
+      try{const result=classify(await f.text(),parseCSV);if(result==='libre')await importCSV(f);else notice(await merge(result));}
+      catch(e){notice('Import: '+e.message);}finally{busy=false;home.disabled=false;input.value='';}
+    };
+    const full=btn('Export combined CSV');view.querySelector('.data-backup').append(full);
+    full.onclick=async()=>{try{const rs=await getAll(),ls=readLabs();if(!rs.length&&!ls.length)return notice('No records to export.');
+      download('SohStx-combined-'+new Date().toISOString().slice(0,10)+'.csv',encode(rs,ls),'text/csv;charset=utf-8');notice('Exported '+rs.length+' records and '+ls.length+' lab results.');}catch(e){notice(e.message);}};
+    const other=view.querySelector('.data-other');
+    for(const id of ['v21Export','v21ExportCsv','exportCsvBtn','backupBtn']){const b=document.getElementById(id);if(b)other.append(b);}
+    const status=document.getElementById('v21ExportStatus');if(status)view.querySelector('details').append(status);
+    const labShare=document.querySelector('.lab-export');if(labShare)other.append(labShare);
+    const labActions=document.querySelector('.lab-actions');if(labActions)labActions.hidden=true;
+    if(labActions)labActions.style.display='none';
+    const restore=document.getElementById('restoreBtn');if(restore)restore.style.display='none';
+    const old=document.querySelector('#view-tools .v21-panel');const link=old?.querySelector('a');if(link)view.querySelector('.data-backup').append(link);if(old)old.hidden=true;
+  }
+  if(document.readyState==='complete')setup();else window.addEventListener('load',setup,{once:true});
+})();
