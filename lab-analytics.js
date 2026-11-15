@@ -189,3 +189,82 @@
   new MutationObserver(()=>render()).observe(panel.querySelector('tbody'),{childList:true});
   render();
 })();
+
+/* Scrollable overview; the existing explorer becomes the expanded view. */
+(() => {
+  const panel = document.querySelector('#view-labs');
+  const wrap = panel.querySelector('.lab-wrap');
+  const picker = wrap.querySelector('label select');
+  const gallery = document.createElement('div');
+  gallery.className = 'lab-gallery';
+  const dialog = document.createElement('dialog');
+  dialog.className = 'lab-expanded';
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.textContent = '← All labs';
+  close.onclick = () => dialog.close();
+  const heading = document.createElement('h2');
+  heading.id = 'expanded-lab-title';
+  dialog.setAttribute('aria-labelledby', heading.id);
+  const pickerLabel = picker.closest('label');
+  const details = [pickerLabel, ...following(pickerLabel)];
+  function following(node) {
+    const result = [];
+    while ((node = node.nextElementSibling)) result.push(node);
+    return result;
+  }
+  wrap.append(gallery, dialog);
+  dialog.append(close, heading, ...details);
+  pickerLabel.hidden = true;
+  dialog.addEventListener('click', e => { if(e.target === dialog) {
+    const r=dialog.getBoundingClientRect(); if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom)dialog.close();
+  }});
+  const style = document.createElement('style');
+  style.textContent = `
+    .lab-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,155px),1fr));gap:12px}
+    .lab-gallery .lab-card{display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;gap:5px;min-width:0;text-align:left;padding:14px;border-radius:15px;border:1px solid #35526a;color:#eff7ff;background:linear-gradient(145deg,#193248,#102033);cursor:pointer}
+    .lab-card:hover,.lab-card:focus-visible{outline:2px solid var(--ink)}
+    .lab-card strong{font-size:1rem;overflow-wrap:anywhere}.lab-card b{font-size:1.45rem;color:var(--ink)}.lab-card small{color:#bed0df;font-weight:normal}.lab-card svg{width:100%;height:58px}
+    .lab-expanded{box-sizing:border-box;width:min(94vw,760px);max-height:88dvh;overflow:auto;border:1px solid #50748a;border-radius:18px;background:#102136;color:#eff7ff;padding:20px}.lab-expanded::backdrop{background:#050b14dc}
+    .lab-expanded select{max-width:100%}.lab-expanded .lab-scroll{overflow-x:auto}
+    @media (max-width:540px),(orientation:portrait) and (max-width:1100px){.lab-gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.lab-gallery .lab-card{padding:11px}.lab-expanded{padding:14px}}
+    @media(max-width:310px){.lab-gallery{grid-template-columns:1fr}}
+  `;
+  document.head.append(style);
+  const palette=['#65dfc0','#73cfff','#c2a8ff','#ffbf81'];
+  const svgNS='http://www.w3.org/2000/svg';
+  function spark(rows, color) {
+    const svg=document.createElementNS(svgNS,'svg');
+    svg.setAttribute('viewBox','0 0 180 52');svg.setAttribute('aria-hidden','true');
+    const exact=rows.filter(r=>/^[-+]?(?:\d+\.?\d*|\.\d+)$/.test(r.result.trim()));
+    if(!exact.length) return document.createTextNode('Reported result');
+    const vals=exact.map(r=>Number(r.result)), min=Math.min(...vals), max=Math.max(...vals);
+    const start=Date.parse(rows[0].date), end=Date.parse(rows.at(-1).date);
+    const coords=exact.map((r,i)=>[end===start?90:5+170*(Date.parse(r.date)-start)/(end-start),max===min?26:46-40*(vals[i]-min)/(max-min)]);
+    const line=document.createElementNS(svgNS,'polyline');
+    line.setAttribute('points',coords.map(p=>p.join(',')).join(' '));line.setAttribute('fill','none');line.setAttribute('stroke',color);line.setAttribute('stroke-width','2.5');svg.append(line);
+    for(const [x,y] of coords){const dot=document.createElementNS(svgNS,'circle');dot.setAttribute('cx',x);dot.setAttribute('cy',y);dot.setAttribute('r','3.5');dot.setAttribute('fill',color);svg.append(dot);}
+    return svg;
+  }
+  let previous=null;
+  function drawGallery(){
+    const raw=localStorage.getItem('sohstx-lab-history-v1-'+(location.pathname.startsWith('/clinical/')?'clinical':'personal'))||'[]';
+    if(raw===previous)return;
+    previous=raw;
+    const groups=new Map();
+    for(const row of JSON.parse(raw)){const k=JSON.stringify([row.test.toLowerCase(),row.unit]);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(row);}
+    gallery.replaceChildren();
+    for(const [key,rows] of [...groups].sort((a,b)=>a[1][0].test.localeCompare(b[1][0].test))){
+      rows.sort((a,b)=>a.date.localeCompare(b.date));
+      const latest=rows.at(-1), color=palette[gallery.childElementCount%palette.length];
+      const card=document.createElement('button');card.type='button';card.className='lab-card';card.style.setProperty('--ink',color);
+      const name=document.createElement('strong');name.textContent=latest.test;
+      const value=document.createElement('b');value.textContent=[latest.result,latest.unit].filter(Boolean).join(' ');
+      const caption=document.createElement('small');caption.textContent=latest.date+' · '+rows.length+(rows.length===1?' result':' results');
+      card.append(name,value,spark(rows,color),caption);
+      card.onclick=()=>{picker.value=key;picker.dispatchEvent(new Event('change'));heading.textContent=latest.test;dialog.showModal();dialog.scrollTop=0;close.focus();};
+      gallery.append(card);
+    }
+  }
+  new MutationObserver(drawGallery).observe(picker,{childList:true});drawGallery();
+})();
