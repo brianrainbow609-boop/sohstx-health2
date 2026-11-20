@@ -176,10 +176,139 @@
           info.textContent = parts.filter(Boolean).join(' · ');
         }
 
-        dates.onchange = showResult;
+        ;        dates.onchange = showResult;
         showResult();
-      }
 
+        const numeric = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
+        const points = history.map((row, index) => ({
+          index,
+          date: row.date,
+          time: Date.parse(row.date),
+          label: String(row.result).trim(),
+          value: Number(row.result)
+        })).filter(p => numeric.test(p.label) && Number.isFinite(p.time))
+          .sort((a, b) => a.time - b.time);
+
+        if (!points.length) continue;
+
+        const ns = 'http://www.w3.org/2000/svg';
+        const graph = document.createElementNS(ns, 'svg');
+        graph.setAttribute('viewBox', '0 0 280 132');
+        graph.setAttribute('role', 'img');
+        graph.setAttribute('aria-label', r.test + ' history, ' + (r.unit || 'reported values'));
+        graph.style.cssText =
+          'display:block;width:100%;height:auto;margin-top:8px;' +
+          'background:#0d1c2d;border-radius:10px;cursor:pointer';
+        label.append(graph);
+
+        function draw(tag, attrs, content) {
+          const node = document.createElementNS(ns, tag);
+          for (const [key, value] of Object.entries(attrs)) {
+            node.setAttribute(key, value);
+          }
+          if (content !== undefined) node.textContent = content;
+          graph.append(node);
+          return node;
+        }
+
+        function write(x, y, text, anchor, color) {
+          return draw('text', {
+            x, y,
+            'text-anchor': anchor,
+            fill: color,
+            'font-size': 13,
+            'font-family': 'system-ui, sans-serif'
+          }, text);
+        }
+
+        const first = points[0];
+        const last = points[points.length - 1];
+        const low = Math.min(...points.map(p => p.value));
+        const high = Math.max(...points.map(p => p.value));
+
+        for (const p of points) {
+          p.x = first.time === last.time ? 140 :
+            35 + 210 * (p.time - first.time) / (last.time - first.time);
+          p.y = low === high ? 65 :
+            88 - 48 * (p.value - low) / (high - low);
+        }
+
+        write(12, 18, r.unit || 'Result', 'start', '#b5c8d9');
+        draw('line', {
+          x1: 18, x2: 262, y1: 101, y2: 101, stroke: '#465e72'
+        });
+
+        if (points.length === history.length && first.time !== last.time) {
+          draw('polyline', {
+            points: points.map(p => `${p.x},${p.y}`).join(' '),
+            fill: 'none',
+            stroke: '#63d6f5',
+            'stroke-width': 3,
+            'stroke-linejoin': 'round'
+          });
+        }
+
+        const dateFormat = new Intl.DateTimeFormat('en-US', {
+          month: 'short', day: 'numeric', year: '2-digit', timeZone: 'UTC'
+        });
+        if (first.time === last.time) {
+          write(140, 122, dateFormat.format(first.time), 'middle', '#c4d5e3');
+        } else {
+          write(12, 122, dateFormat.format(first.time), 'start', '#c4d5e3');
+          write(268, 122, dateFormat.format(last.time), 'end', '#c4d5e3');
+        }
+
+        const dots = points.map(p => {
+          const dot = draw('circle', {
+            cx: p.x, cy: p.y, r: 4.5, fill: '#63d6f5',
+            stroke: '#0d1c2d', 'stroke-width': 1.5
+          });
+          const title = document.createElementNS(ns, 'title');
+          title.textContent = `${p.date} · ${p.label} ${r.unit || ''}`;
+          dot.append(title);
+          return dot;
+        });
+
+        // Keep the latest label, then fit earlier labels where they can be read.
+        const placed = [];
+        for (const p of [...points].reverse()) {
+          const fits = placed.every(other =>
+            Math.abs(other.x - p.x) > 44 || Math.abs(other.y - p.y) > 18
+          );
+          if (fits) {
+            write(p.x, p.y - 9, p.label, 'middle', '#f2f8ff');
+            placed.push(p);
+          }
+        }
+
+        function highlight() {
+          points.forEach((p, i) => {
+            const selected = p.index === Number(dates.value);
+            dots[i].setAttribute('fill', selected ? '#ffffff' : '#63d6f5');
+            dots[i].setAttribute('r', selected ? 6 : 4.5);
+          });
+        }
+
+        dates.addEventListener('change', highlight);
+        highlight();
+
+        graph.addEventListener('click', event => {
+          const matrix = graph.getScreenCTM();
+          if (!matrix) return;
+
+          event.preventDefault();
+          const tap = new DOMPoint(event.clientX, event.clientY)
+            .matrixTransform(matrix.inverse());
+          const distance = p => Math.hypot(p.x - tap.x, p.y - tap.y);
+          const nearest = points.reduce((a, b) =>
+            distance(a) <= distance(b) ? a : b
+          );
+
+          detail.open = true;
+          dates.value = String(nearest.index);
+          dates.dispatchEvent(new Event('change'));
+        });
+      }
       applyFilters();
     }
 
