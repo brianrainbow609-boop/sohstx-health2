@@ -119,10 +119,24 @@
 
       search.oninput = filter.onchange = applyFilters;
 
+            const gallery = add(summary, 'div', '');
+      gallery.style.cssText = [
+        'display:grid',
+        'grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))',
+        'gap:12px',
+        'align-items:start'
+      ].join(';');
+
       for (const history of ordered) {
         const r = history[0];
-        const detail = add(summary, 'details', '');
-        detail.style.cssText = 'padding:12px 0;border-bottom:1px solid #40546a';
+        const detail = add(gallery, 'details', '');
+        detail.style.cssText = [
+          'min-width:0',
+          'padding:14px',
+          'background:#14283b',
+          'border:1px solid #40546a',
+          'border-radius:14px'
+        ].join(';');
 
         const label = add(detail, 'summary', r.test + ' · ' + r.result + ' ' +
           (r.unit || '') + ' · ' + status(r));
