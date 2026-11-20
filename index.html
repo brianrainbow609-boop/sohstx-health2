@@ -4,7 +4,187 @@ header.sohstx-banner{display:flex;flex-direction:row;align-items:center;justify-
 .brand-crop img{display:block;width:100%;height:auto}
 .sohstx-banner button{flex:none;min-height:44px}
 @media(max-width:650px),(orientation:portrait) and (max-width:1400px){.brand-crop img{width:128%;max-width:none}.sohstx-banner button{max-width:33%;white-space:normal}}
-</style></head><body>
+</style>
+<style id="sohstx-phone-layout">
+  @media (max-width: 700px) {
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 0;
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.5;
+      --muted: #c3d1e1;
+    }
+
+    main {
+      width: 100%;
+      min-width: 0;
+      padding: 16px 12px 60px;
+    }
+
+    header {
+      min-width: 0;
+      padding: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    header .brand {
+      min-width: 0;
+      max-width: 100%;
+      flex: 1 1 200px;
+    }
+
+    header img {
+      display: block;
+      max-width: 100% !important;
+      height: auto !important;
+    }
+
+    .hero, .sectionhead {
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    h1 {
+      font-size: 30px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      font-size: 24px;
+      line-height: 1.25;
+    }
+
+    h3, main summary, .entry strong {
+      font-size: 18px;
+    }
+
+    main p, main label, main input, main select,
+    main textarea, main button, #notice {
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    main small, .subtle, .legend, .chartdetail,
+    .metric > span, .metric small, .metric p,
+    .entry small, .bandlabel, .pager span {
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    button, select, textarea,
+    input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) {
+      min-height: 46px;
+      max-width: 100%;
+    }
+
+    .tabs {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 6px;
+      overflow: visible;
+      padding: 6px;
+    }
+
+    .tabs .tab {
+      width: 100%;
+      min-width: 0;
+      padding: 10px 6px;
+      white-space: normal;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .panel {
+      min-width: 0;
+      padding: 14px;
+    }
+
+    .twocol, .insights, .filters {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px;
+    }
+
+    .metric {
+      min-width: 0;
+      padding: 12px;
+    }
+
+    .metric div {
+      flex-wrap: wrap;
+    }
+
+    .metric b {
+      font-size: 29px;
+    }
+
+    /* The lab gallery sets its columns inline. */
+    #view-labs div:has(> details) {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    #view-labs details {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    #view-labs summary {
+      padding-block: 6px;
+      font-size: 19px;
+      line-height: 1.4;
+    }
+
+    #view-labs summary svg {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto !important;
+    }
+
+    #view-labs summary svg text {
+      font-size: 14px;
+    }
+
+    #view-labs input, #view-labs select {
+      width: 100%;
+      margin-block: 4px;
+    }
+
+    .chartwrap, .tablewrap {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .tablewrap {
+      overflow-x: auto;
+    }
+
+    .tablewrap table {
+      font-size: 16px;
+    }
+
+    .tablewrap th, .tablewrap td {
+      padding: 9px 10px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .metrics {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+</style>
+</head><body>
 <header class="sohstx-banner"><div class="brand-crop"><img src="./brand-header.webp" alt="SohStx Health"></div><button id="brand-install" type="button">Install Personal</button></header>
 <main><section class="hero"><div><span class="eyebrow">HEALTH INTELLIGENCE / V2</span><h1 id="pageTitle">Your health at a glance</h1><p>LibreView glucose analytics, personal events, and your complete local history.</p></div><div class="hero-actions"><button id="importBtn" class="primary">＋ Import Data</button><input type="file" id="csvFile" accept=".csv,text/csv" hidden></div></section><div id="notice" role="status" aria-live="polite"></div>
 <nav class="tabs" aria-label="Dashboard sections"><button class="tab active" data-tab="home">⌂ Home</button><button class="tab" data-tab="charts">⌁ Charts</button><button class="tab" data-tab="analysis">◈ Analysis</button><button class="tab" data-tab="records">☷ Records</button><button class="tab" data-tab="tools">⚙ More</button></nav>
