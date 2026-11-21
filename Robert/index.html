@@ -15,17 +15,33 @@
 .tree-route summary{cursor:pointer;font-weight:750;padding:8px;color:#ffd078}
 .tree-route .row{border-top:1px solid #476064}
 .tree-route button{min-width:92px}
-</style><main><header><small>SOHSTX / TIRE SHOP RPG</small><h1>That Time I Got<br>Reincarnated as <em>Robert</em></h1></header><aside><b id="lv"></b><b id="cash"></b><b id="xp"></b></aside><div class="meters"><div><label>FOREMAN</label><b>Robert</b><progress id="charge" max="4"></progress></div><div><label>WORK ORDER</label><b id="job"></b><progress id="remaining"></progress></div></div><div class="arena" aria-label="Robert in work blues facing a truck tire"><span class="speech" id="speech" hidden></span><i class="tech"></i><i class="wheel"></i></div><p id="log" role="status"></p><section class="actions"><button id="burst">Impact burst</button><button id="pause">Clock in</button></section><section><h2>Shop tech tree</h2><p>Spend ticket cash on any route. Buy the first rank of a skill to open the next one in that route.</p><div id="tree"></div></section><section><h2 id="crewTitle">The nameless shop rag</h2><p id="lore"></p><div id="naming"><label for="nickname">GIVE IT A NAME</label><input id="nickname" maxlength="22" placeholder="e.g. Greasewick"><div class="actions"><button id="torque">Torque hand</button><button id="runner">Parts runner</button></div></div></section></main><script>
+nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:12px}nav button{background:#324347;color:white;padding:6px;font-size:15px}nav button[aria-pressed=true]{background:#ffd078;color:#182324}.row button{flex-shrink:0}#quest progress{display:block;margin:10px 0}
+</style><main><header><small>SOHSTX / TIRE SHOP RPG</small><h1>That Time I Got<br>Reincarnated as <em>Robert</em></h1></header><aside><b id="lv"></b><b id="cash"></b><b id="xp"></b></aside><nav aria-label="Game screens"><button data-screen="shop" aria-pressed="true">Shop</button><button data-screen="skills" aria-pressed="false">Tech tree</button><button data-screen="hiring" aria-pressed="false">Hiring</button><button data-screen="quest" aria-pressed="false">Quests</button></nav><div id="shop"><div class="meters"><div><label>FOREMAN</label><b>Robert</b><progress id="charge" max="4"></progress></div><div><label>WORK ORDER</label><b id="job"></b><progress id="remaining"></progress></div></div><div class="arena" aria-label="Robert in work blues facing a truck tire"><span class="speech" id="speech" hidden></span><i class="tech"></i><i class="wheel"></i></div><p id="log" role="status"></p><section class="actions"><button id="burst">Impact burst</button><button id="pause">Clock in</button></section><section><h2>Tool bench</h2><div id="bench"></div></section><section><h2 id="crewTitle">The nameless shop rag</h2><p id="lore"></p><div id="naming"><label for="nickname">GIVE IT A NAME</label><input id="nickname" maxlength="22" placeholder="e.g. Greasewick"><div class="actions"><button id="torque">Torque hand</button><button id="runner">Parts runner</button></div></div></section></div><section id="skills" hidden><h2>Tech tree</h2><p id="points"></p><p>Each rank costs 1 point. First ranks open the next skill in their route.</p><div id="tree"></div></section>
+<section id="hiring" hidden><h2>Hire tire technicians</h2><p>Pay a one-time hiring bonus. Your technicians work alongside Robert whenever he’s clocked in.</p><div id="roster"></div></section>
+<section id="quest" hidden><h2>Owner’s work orders</h2><p>Owner June Mercer wants this shop to outlast GM Dale “Red Tag” Voss. Every fifth ticket, Dale slips an extra inspection onto the Magnum job.</p><h3 id="order"></h3><p id="brief"></p><progress id="orderProgress"></progress><p id="count"></p><button id="claim"></button></section></main><script>
 const el=id=>document.getElementById(id), key='sohstx.robert.shift.v1';
 let s={done:0,cash:0,tool:1,hp:12,charge:0,name:'',role:'',message:'You wake up wearing Robert’s name patch. The first ticket says “quick flat.” Somebody underlined quick twice.'};
 try{Object.assign(s,JSON.parse(localStorage.getItem(key))||{})}catch{}
+s.points ??= s.done;
+s.hires ??= [];
+s.orders ??= 0;
+s.orderStart ??= s.done;
 let running=false;
+const screens = document.querySelectorAll('nav button');
+for (const tab of screens) {
+  tab.onclick = () => {
+    for (const item of screens) {
+      el(item.dataset.screen).hidden = item !== tab;
+      item.setAttribute('aria-pressed', String(item === tab));
+    }
+  };
+}
 const jobs=['Slow leak','Seized lug','Mystery vibration','Dual assembly','Magnum lot call'];
 const level=()=>1+Math.floor(s.done/3),maxHP=()=>12+3*s.done+(s.done%5===4?10:0);
 function save(){try{localStorage.setItem(key,JSON.stringify(s))}catch{}}
 const routes = [
   ['Tools', [
-    ['tool','Impact wrench','+1 work per stroke and +3 burst power per rank.',6],
+    ['control','Impact control','+3 burst power per rank.',1],
     ['sockets','Impact sockets','+2 work per stroke on seized lugs per rank.',10],
     ['breaker','Breaker bar','+1 work per stroke on every ticket per rank.',16],
     ['impact','High-torque impact','+5 impact burst power per rank.',24]
@@ -45,11 +61,11 @@ const routes = [
 ];
 const rank = id => s[id] || 0;
 const chargeNeeded = () => 4 - rank('compressor');
-const burstPower = () => (s.tool + level()) * 3 + 5 * rank('impact');
+const burstPower = () => (s.tool + level()) * 3 + 5 * rank('impact') + 3 * rank('control');
 function strokePower() {
   const specialty = ['diagnosis','sockets','balancer','changer','road'][s.done % jobs.length];
   const bonus = specialty === 'diagnosis' || specialty === 'sockets' ? 2 : 3;
-  return s.tool + level() + rank('breaker') + 2 * rank('foreman') +
+  return crewPower() + rank('ratchet') + s.tool + level() + rank('breaker') + 2 * rank('foreman') +
     bonus * rank(specialty) + (s.role === 'torque' ? 2 : 0);
 }
 const skillViews = [];
@@ -69,12 +85,11 @@ for (const [title, skills] of routes) {
     row.querySelector('strong').textContent = name;
     description.textContent = effect;
     const prerequisite = skills[index - 1];
-    const cap = id === 'compressor' ? 2 : id === 'tool' ? Infinity : 3;
-    const cost = () => base * (rank(id) + (id === 'tool' ? 0 : 1));
+    const cap = id === 'compressor' ? 2 : 3;
     const locked = () => prerequisite && !rank(prerequisite[0]);
     button.onclick = () => {
-      if (locked() || rank(id) >= cap || s.cash < cost()) return;
-      s.cash -= cost();
+      if (locked() || rank(id) >= cap || s.points < 1) return;
+      s.points--;
       s[id] = rank(id) + 1;
       if (id === 'compressor') s.charge = Math.min(s.charge, chargeNeeded());
       save();
@@ -83,17 +98,90 @@ for (const [title, skills] of routes) {
     skillViews.push(() => {
       const n = rank(id);
       status.textContent = locked() ? 'Requires ' + prerequisite[1] : 'Rank ' + n + (Number.isFinite(cap) ? '/' + cap : '');
-      button.disabled = !!locked() || n >= cap || s.cash < cost();
-      button.textContent = locked() ? 'Locked' : n >= cap ? 'Max rank' : (n ? 'Upgrade $' : 'Unlock $') + cost();
+      button.disabled = !!locked() || n >= cap || s.points < 1;
+      button.textContent = locked() ? 'Locked' : n >= cap ? 'Max rank' : (n ? 'Upgrade' : 'Unlock') + ' · 1 pt';
     });
   });
   skillViews.push(() => {
     panel.querySelector('summary').textContent = title + ' · ' + skills.filter(([id]) => rank(id)).length + '/4 unlocked';
   });
 }
+const technicians = [
+  ['beck','Beck · Bay tech',18,1],
+  ['inez','Inez · Fleet tech',48,3],
+  ['otis','Otis · Lead tech',95,6]
+];
+function crewPower() {
+  return technicians.reduce((sum,[id,,,power]) => sum + (s.hires.includes(id) ? power : 0),0);
+}
+function cashRow(parent,title,description,offer,buy) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = '<div><strong></strong><span></span></div><button></button>';
+  row.querySelector('strong').textContent = title;
+  row.querySelector('span').textContent = description;
+  const button = row.querySelector('button');
+  button.onclick = () => {
+    const {cost,finished} = offer();
+    if (finished || s.cash < cost) return;
+    s.cash -= cost;
+    buy();
+    save();
+    render();
+  };
+  el(parent).append(row);
+  skillViews.push(() => {
+    const {label,cost,finished} = offer();
+    button.textContent = label;
+    button.disabled = finished || s.cash < cost;
+  });
+}
+for (const [id,name,base,effect] of [
+  ['tool','Impact wrench',6,'+1 stroke work and +3 burst power per upgrade.'],
+  ['ratchet','Air ratchet',9,'+1 stroke work per upgrade.']
+]) {
+  cashRow('bench',name,effect,() => {
+    const n = rank(id);
+    const cost = base * (id === 'tool' ? n : n + 1);
+    return {cost,label:(n ? 'Rank '+n+' · Upgrade' : 'Buy')+' $'+cost};
+  },() => { s[id] = rank(id) + 1 });
+}
+for (const [id,name,cost,power] of technicians) {
+  cashRow('roster',name,'+'+power+' work per stroke.',() => {
+    const finished = s.hires.includes(id);
+    return {cost,finished,label:finished ? 'On crew' : 'Hire $'+cost};
+  },() => s.hires.push(id));
+}
+const orders = [
+  ['Clear the backlog','June wants the waiting trucks back on the road.',3,12],
+  ['Pass the spot audit','Dale flagged the bay. Give June five closed tickets for the audit.',5,24],
+  ['Save the fleet account','June promised the fleet dispatcher a full run of finished jobs.',8,40]
+];
+function activeOrder() {
+  return orders[s.orders % orders.length];
+}
+el('claim').onclick = () => {
+  const [,,goal,reward] = activeOrder();
+  if (s.done - s.orderStart < goal) return;
+  s.cash += reward;
+  s.orders++;
+  s.orderStart = s.done;
+  save();
+  render();
+};
 function render(){
-el('lv').textContent='Lv '+level();el('cash').textContent='$'+s.cash;el('xp').textContent=s.done%3+'/3 jobs';el('job').textContent=jobs[s.done%5];el('remaining').max=maxHP();el('remaining').value=s.hp;el('charge').max=chargeNeeded();el('charge').value=s.charge;el('log').textContent=s.message;el('pause').textContent=running?'Pause':'Clock in';el('burst').disabled=!running||s.charge<chargeNeeded();el('burst').textContent=s.charge===chargeNeeded()?'Impact burst ⚡':'Charging '+s.charge+'/'+chargeNeeded();skillViews.forEach(update => update());el('naming').hidden=level()<2||!!s.name;el('crewTitle').textContent=s.name||'The nameless shop rag';el('lore').textContent=s.name?(s.role==='torque'?'Torque hand · Adds 2 work every stroke.':'Parts runner · Earns $4 extra per ticket.'):(level()<2?'Something in the rag bin just sneezed. Finish three tickets to learn its name.':'The rag climbs out and waits for you to speak. Give it a name and a calling. Torque hands add 2 work per stroke. Parts runners earn $4 extra per ticket.');document.querySelector('.tech').style.animationPlayState=running?'running':'paused'}
-function stroke(power){s.hp-=power;if(s.hp<=0){const reward=6+level()+2*rank('estimate')+(s.role==='runner'?4:0);s.done++;s.cash+=reward;s.hp=maxHP()-rank('jack');s.message='Ticket closed. +$'+reward+'. '+(s.done===3?'Something in the rag bin wants a name.':s.done%3===0?'Level up! Robert works harder each stroke.':'Next up: '+jobs[s.done%5]+'.')}save();render()}
+  const [title,brief,goal,reward] = activeOrder();
+  const progress = Math.min(goal,s.done - s.orderStart);
+  el('order').textContent = title;
+  el('brief').textContent = brief;
+  el('orderProgress').max = goal;
+  el('orderProgress').value = progress;
+  el('count').textContent = progress+' / '+goal+' tickets · '+s.orders+' orders paid';
+  el('claim').textContent = 'Claim $'+reward;
+  el('claim').disabled = progress < goal;
+  el('points').textContent = s.points+' available · Earn 1 point per completed ticket.';
+el('lv').textContent='Lv '+level();el('cash').textContent='$'+s.cash;el('xp').textContent=s.done%3+'/3 jobs';el('job').textContent=jobs[s.done%5]+(s.done%5===4?' · Red Tag inspection':'');el('remaining').max=maxHP();el('remaining').value=s.hp;el('charge').max=chargeNeeded();el('charge').value=s.charge;el('log').textContent=s.message;el('pause').textContent=running?'Pause':'Clock in';el('burst').disabled=!running||s.charge<chargeNeeded();el('burst').textContent=s.charge===chargeNeeded()?'Impact burst ⚡':'Charging '+s.charge+'/'+chargeNeeded();skillViews.forEach(update => update());el('naming').hidden=level()<2||!!s.name;el('crewTitle').textContent=s.name||'The nameless shop rag';el('lore').textContent=s.name?(s.role==='torque'?'Torque hand · Adds 2 work every stroke.':'Parts runner · Earns $4 extra per ticket.'):(level()<2?'Something in the rag bin just sneezed. Finish three tickets to learn its name.':'The rag climbs out and waits for you to speak. Give it a name and a calling. Torque hands add 2 work per stroke. Parts runners earn $4 extra per ticket.');document.querySelector('.tech').style.animationPlayState=running?'running':'paused'}
+function stroke(power){s.hp-=power;if(s.hp<=0){const reward=6+level()+2*rank('estimate')+(s.role==='runner'?4:0);s.done++;s.points++;s.cash+=reward;s.hp=maxHP()-rank('jack');s.message='Ticket closed. +$'+reward+' and +1 skill point. '+(s.done===3?'Something in the rag bin wants a name.':s.done%3===0?'Level up! Robert works harder each stroke.':'Next up: '+jobs[s.done%5]+'.')}save();render()}
 el('pause').onclick=()=>{running=!running;render()};el('burst').onclick=()=>{if(running&&s.charge===chargeNeeded()){s.charge=0;stroke(burstPower())}};
 for(const role of ['torque','runner'])el(role).onclick=()=>{const name=el('nickname').value.trim();if(!name){el('nickname').focus();return}if(level()<2||s.name)return;s.name=name;s.role=role;s.message=name+' hops onto the service cart. Your first crew member clocks in.';save();render()};
 setInterval(()=>{if(running){s.charge=Math.min(chargeNeeded(),s.charge+1);stroke(strokePower())}},1000);render();
@@ -116,4 +204,5 @@ function scheduleSpeech() {
 }
 scheduleSpeech();
 </script></html>
+
 
