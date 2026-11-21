@@ -157,7 +157,116 @@
       amounts.textContent=formatMacros(result.count?result.sums:{kcal:0,protein:0,carbs:0,fat:0});
       coverage.textContent=result.count+' logged meals'+(result.incomplete?' · '+result.incomplete+' with missing or partial nutrition':'');
     }
-    setInterval(updateDay,60000);window.addEventListener('focus',updateDay);
+    // Home and Meals share the same meal form and draft.
+const todayPanel = document.createElement('section');
+todayPanel.id = 'homeToday';
+todayPanel.className = 'panel';
+
+const todayHeading = node('h2', 'Today’s log');
+const todayList = document.createElement('ul');
+const nutritionLine = node('p', '');
+nutritionLine.className = 'nutrition-line';
+
+const openMeals = node('button', 'Open Meals');
+openMeals.type = 'button';
+openMeals.onclick = () => tab.click();
+
+todayPanel.append(todayHeading, todayList, nutritionLine, openMeals);
+home.append(todayPanel);
+
+// Keep meal time visible beside the save action.
+const timeLabel = f.when.closest('label');
+const saveButton = form.querySelector('[type="submit"]');
+form.insertBefore(timeLabel, saveButton);
+summary.textContent = 'Other food, nutrition or notes';
+
+let chosenTime = '';
+f.when.addEventListener('input', () => {
+  chosenTime = f.when.value;
+});
+form.addEventListener('reset', () => {
+  chosenTime = '';
+});
+
+// The existing food buttons set the time on the first tap.
+// Preserve a time the user has already entered for this meal.
+controls.addEventListener('click', () => {
+  if (chosenTime) f.when.value = chosenTime;
+});
+
+// The existing code creates the preset buttons later in setup.
+queueMicrotask(() => {
+  const shake = Array.from(controls.children).find(button =>
+    button.textContent.startsWith('Core Power')
+  );
+  if (shake) controls.prepend(shake);
+});
+
+function renderToday() {
+  if (!home.classList.contains('active')) return;
+
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  const events = visibleEvents();
+  const entries = events.filter(record => {
+    const time = Date.parse(record.date);
+    return time >= start.getTime() && time <= now.getTime();
+  }).sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+
+  todayList.replaceChildren();
+  if (!entries.length) {
+    todayList.append(node('li', 'Nothing logged today yet.'));
+  }
+
+  for (const entry of entries) {
+    const time = new Date(entry.date).toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    const raw = entry.raw || {};
+    const name = raw.text || raw.description || raw.eventType || 'Event';
+    todayList.append(node('li', time + ' · ' + name));
+  }
+
+  const report = summarizeMeals(events, 1, now);
+  if (!report.meals) {
+    nutritionLine.textContent = 'Today’s nutrition · No meals logged yet.';
+  } else {
+    const kcal = report.sums.kcal;
+    const protein = report.sums.protein;
+    nutritionLine.textContent = 'Today’s logged nutrition · ' +
+      (kcal == null ? 'Calories unavailable' : rounded(kcal) + ' kcal') +
+      ' · ' +
+      (protein == null ? 'Protein unavailable' : rounded(protein) + ' g protein') +
+      (report.incomplete ? ' · Partial nutrition data' : '');
+  }
+}
+
+function refreshHome() {
+  // Keep the existing rolling 24-hour detail on the Meals tab.
+  day.hidden = home.classList.contains('active');
+  renderToday();
+}
+
+const homeUpdates = new MutationObserver(refreshHome);
+homeUpdates.observe(home, {
+  attributes: true,
+  attributeFilter: ['class']
+});
+
+// The app refreshes its timeline after saves, imports and deletions.
+const timeline = document.getElementById('timeline');
+if (timeline) homeUpdates.observe(timeline, { childList: true });
+
+function updateClock() {
+  updateDay();
+  refreshHome();
+}
+
+setInterval(updateClock, 60000);
+window.addEventListener('focus', updateClock);
+refreshHome();
     function draft(){
       const v=estimate(portions());for(const [k] of nutrients)if(f[k].value!=='')v[k]=Number(f[k].value);
       return v;
