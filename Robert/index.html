@@ -1,6 +1,16 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>That Time I Got Reincarnated as Robert</title><style>
 *{box-sizing:border-box}body{margin:0;background:#10191b;color:#fff6df;font:17px system-ui,sans-serif}main{max-width:660px;margin:auto;padding:18px}header,section,aside{margin-bottom:14px}small,label{font:bold 13px monospace;color:#9ed6cc;letter-spacing:.09em}h1{font-size:clamp(29px,7vw,43px);line-height:1.02;margin:8px 0 16px;letter-spacing:-.045em}h1 em{color:#ffbf53;font-style:normal}aside,.meters,.actions{display:flex;gap:8px}aside b,.meters>div{flex:1;background:#243437;border:1px solid #476064;border-radius:7px;padding:10px}aside b{font-size:15px;color:#ffce79}.meters b{display:block}progress{width:100%;height:13px;accent-color:#68dbb6}.arena{position:relative;overflow:hidden;height:190px;background:repeating-linear-gradient(#344447 0 9px,#2c3d40 10px 13px);border-bottom:24px solid #536260;border-radius:8px;margin-top:8px}.arena:before{content:'BAY 01';position:absolute;right:10px;top:10px;background:#edb75c;color:#25312e;padding:5px;font:bold 16px monospace}.tech,.wheel{position:absolute;bottom:2px}.tech{left:18%;width:64px;height:94px;background:linear-gradient(#202c2e 0 12%,#dba777 12% 40%,#367e83 40% 67%,#374549 67% 90%,#181e20 90%);border-radius:19px 19px 9px 9px;box-shadow:inset -9px 0 #0002;animation:work 1s infinite alternate}.tech:before{content:'•';position:absolute;top:10px;right:9px;color:#332722}.tech:after{content:'ROB';position:absolute;top:43px;left:10px;font:bold 10px monospace;background:#fff2cd;color:#264248;padding:1px 3px}.wheel{right:15%;width:93px;height:93px;border-radius:50%;background:radial-gradient(circle,#394749 0 8%,#91a2a0 9% 24%,#506063 25% 32%,#1d2729 33% 55%,transparent 56%),repeating-conic-gradient(#273234 0deg 9deg,#172022 9deg 17deg);border:4px solid #1a2325}@keyframes work{to{transform:translateX(7px) rotate(3deg)}}@media(prefers-reduced-motion:reduce){.tech{animation:none}}button,input{min-height:48px;border:0;border-radius:7px;font:inherit;padding:10px}button{cursor:pointer;background:#ffd078;color:#182324;font-weight:750}button:disabled{background:#3b4848;color:#bdc7c5;cursor:default}.actions button:first-child{flex:1}.actions button+button{background:#354749;color:white}p{line-height:1.45}section{padding:14px;background:#1b292c;border-radius:9px}section h2{font-size:20px;margin:0 0 8px}.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}.row span{display:block;font-size:15px;color:#c4d1ca}input{width:100%;margin:5px 0;background:#344547;color:white}#log{min-height:2.8em;color:#e7d9b9}
-</style><main><header><small>SOHSTX / TIRE SHOP RPG</small><h1>That Time I Got<br>Reincarnated as <em>Robert</em></h1></header><aside><b id="lv"></b><b id="cash"></b><b id="xp"></b></aside><div class="meters"><div><label>FOREMAN</label><b>Robert</b><progress id="charge" max="4"></progress></div><div><label>WORK ORDER</label><b id="job"></b><progress id="remaining"></progress></div></div><div class="arena" aria-label="Robert in work blues facing a truck tire"><i class="tech"></i><i class="wheel"></i></div><p id="log" role="status"></p><section class="actions"><button id="burst">Impact burst</button><button id="pause">Clock in</button></section><section><h2>Tool bench</h2><div class="row"><div><strong>Impact wrench</strong><span>+1 work every stroke</span></div><button id="buy"></button></div></section><section><h2 id="crewTitle">The nameless shop rag</h2><p id="lore"></p><div id="naming"><label for="nickname">GIVE IT A NAME</label><input id="nickname" maxlength="22" placeholder="e.g. Greasewick"><div class="actions"><button id="torque">Torque hand</button><button id="runner">Parts runner</button></div></div></section></main><script>
+.speech {
+  position:absolute; z-index:1; left:10%; bottom:102px;
+  width:max-content; max-width:min(78%, 240px); padding:6px 10px;
+  border-radius:10px; background:#fff6df; color:#202a29;
+  font:800 14px/1.15 system-ui,sans-serif;
+}
+.speech::after {
+  content:''; position:absolute; left:clamp(26px, 8vw, 60px); top:100%;
+  border:8px solid transparent; border-top-color:#fff6df; border-bottom:0;
+}
+</style><main><header><small>SOHSTX / TIRE SHOP RPG</small><h1>That Time I Got<br>Reincarnated as <em>Robert</em></h1></header><aside><b id="lv"></b><b id="cash"></b><b id="xp"></b></aside><div class="meters"><div><label>FOREMAN</label><b>Robert</b><progress id="charge" max="4"></progress></div><div><label>WORK ORDER</label><b id="job"></b><progress id="remaining"></progress></div></div><div class="arena" aria-label="Robert in work blues facing a truck tire"><span class="speech" id="speech" hidden></span><i class="tech"></i><i class="wheel"></i></div><p id="log" role="status"></p><section class="actions"><button id="burst">Impact burst</button><button id="pause">Clock in</button></section><section><h2>Tool bench</h2><div class="row"><div><strong>Impact wrench</strong><span>+1 work every stroke</span></div><button id="buy"></button></div></section><section><h2 id="crewTitle">The nameless shop rag</h2><p id="lore"></p><div id="naming"><label for="nickname">GIVE IT A NAME</label><input id="nickname" maxlength="22" placeholder="e.g. Greasewick"><div class="actions"><button id="torque">Torque hand</button><button id="runner">Parts runner</button></div></div></section></main><script>
 const el=id=>document.getElementById(id), key='sohstx.robert.shift.v1';
 let s={done:0,cash:0,tool:1,hp:12,charge:0,name:'',role:'',message:'You wake up wearing Robert’s name patch. The first ticket says “quick flat.” Somebody underlined quick twice.'};
 try{Object.assign(s,JSON.parse(localStorage.getItem(key))||{})}catch{}
@@ -14,4 +24,22 @@ function stroke(power){s.hp-=power;if(s.hp<=0){const reward=6+level()+(s.role===
 el('pause').onclick=()=>{running=!running;render()};el('buy').onclick=()=>{if(s.cash>=price()){s.cash-=price();s.tool++;save();render()}};el('burst').onclick=()=>{if(running&&s.charge===4){s.charge=0;stroke((s.tool+level())*3)}};
 for(const role of ['torque','runner'])el(role).onclick=()=>{const name=el('nickname').value.trim();if(!name){el('nickname').focus();return}if(level()<2||s.name)return;s.name=name;s.role=role;s.message=name+' hops onto the service cart. Your first crew member clocks in.';save();render()};
 setInterval(()=>{if(running){s.charge=Math.min(4,s.charge+1);stroke(s.tool+level()+(s.role==='torque'?2:0))}},1000);render();
+const robertLines = [
+  "I DON'T HAVE TIME FOR THIS SHIT",
+  "IM ABOUT TO LOSE MY SHIT",
+  "DAMN IT VALDEZ"
+];
+let lastLine;
+function scheduleSpeech() {
+  setTimeout(() => {
+    const choices = robertLines.filter(line => line !== lastLine);
+    lastLine = choices[Math.floor(Math.random() * choices.length)];
+    const bubble = el('speech');
+    bubble.textContent = lastLine;
+    bubble.hidden = false;
+    setTimeout(() => { bubble.hidden = true }, 4000);
+    scheduleSpeech();
+  }, 10000 + Math.floor(Math.random() * 5001));
+}
+scheduleSpeech();
 </script></html>
