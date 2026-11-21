@@ -1,0 +1,6 @@
+.git/
+.github/
+wrangler.jsonc
+.wrangler/
+node_modules/
+README.md
