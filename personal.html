@@ -1,0 +1,1050 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1220"><meta name="description" content="SohStx Health — private LibreView analytics"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="brand-192.png" type="image/png"><link rel="stylesheet" href="styles.css?v=23"><title>SohStx Health V2</title><link rel="stylesheet" href="/mobile-reading.css?v=1"><style>
+header.sohstx-banner{display:flex;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:12px;background:#030c24;padding:8px clamp(10px,3vw,32px);width:100%;box-sizing:border-box}
+.brand-crop{min-width:0;overflow:hidden;flex:1;max-width:640px}
+.brand-crop img{display:block;width:100%;height:auto}
+.sohstx-banner button{flex:none;min-height:44px}
+@media(max-width:650px),(orientation:portrait) and (max-width:1400px){.brand-crop img{width:128%;max-width:none}.sohstx-banner button{max-width:33%;white-space:normal}}
+</style>
+<style id="sohstx-phone-layout">
+  @media (max-width: 700px) {
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 0;
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.5;
+      --muted: #c3d1e1;
+    }
+
+    main {
+      width: 100%;
+      min-width: 0;
+      padding: 16px 12px 60px;
+    }
+
+    header {
+      min-width: 0;
+      padding: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    header .brand {
+      min-width: 0;
+      max-width: 100%;
+      flex: 1 1 200px;
+    }
+
+    header img {
+      display: block;
+      max-width: 100% !important;
+      height: auto !important;
+    }
+
+    .hero, .sectionhead {
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    h1 {
+      font-size: 30px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      font-size: 24px;
+      line-height: 1.25;
+    }
+
+    h3, main summary, .entry strong {
+      font-size: 18px;
+    }
+
+    main p, main label, main input, main select,
+    main textarea, main button, #notice {
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    main small, .subtle, .legend, .chartdetail,
+    .metric > span, .metric small, .metric p,
+    .entry small, .bandlabel, .pager span {
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    button, select, textarea,
+    input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) {
+      min-height: 46px;
+      max-width: 100%;
+    }
+
+    .tabs {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 6px;
+      overflow: visible;
+      padding: 6px;
+    }
+
+    .tabs .tab {
+      width: 100%;
+      min-width: 0;
+      padding: 10px 6px;
+      white-space: normal;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .panel {
+      min-width: 0;
+      padding: 14px;
+    }
+
+    .twocol, .insights, .filters {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px;
+    }
+
+    .metric {
+      min-width: 0;
+      padding: 12px;
+    }
+
+    .metric div {
+      flex-wrap: wrap;
+    }
+
+    .metric b {
+      font-size: 29px;
+    }
+
+    /* The lab gallery sets its columns inline. */
+    #view-labs div:has(> details) {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    #view-labs details {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    #view-labs summary {
+      padding-block: 6px;
+      font-size: 19px;
+      line-height: 1.4;
+    }
+
+    #view-labs summary svg {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto !important;
+    }
+
+    #view-labs summary svg text {
+      font-size: 14px;
+    }
+
+    #view-labs input, #view-labs select {
+      width: 100%;
+      margin-block: 4px;
+    }
+
+    .chartwrap, .tablewrap {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .tablewrap {
+      overflow-x: auto;
+    }
+
+    .tablewrap table {
+      font-size: 16px;
+    }
+
+    .tablewrap th, .tablewrap td {
+      padding: 9px 10px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .metrics {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+</style>
+</head><body>
+<header class="sohstx-banner"><div class="brand-crop"><img src="./brand-header.webp" alt="SohStx Health"></div><button id="brand-install" type="button">Install Personal</button></header>
+<main><section class="hero"><div><span class="eyebrow">HEALTH INTELLIGENCE / V2</span><h1 id="pageTitle">Your health at a glance</h1><p>LibreView glucose analytics, personal events, and your complete local history.</p></div><div class="hero-actions"><button id="importBtn" class="primary">＋ Import Data</button><input type="file" id="csvFile" accept=".csv,text/csv" hidden></div></section><div id="notice" role="status" aria-live="polite"></div>
+<nav class="tabs" aria-label="Dashboard sections"><button class="tab active" data-tab="home">⌂ Home</button><button class="tab" data-tab="charts">⌁ Charts</button><button class="tab" data-tab="analysis">◈ Analysis</button><button class="tab" data-tab="records">☷ Records</button><button class="tab" data-tab="tools">⚙ More</button></nav>
+<section class="view active" id="view-home"><div class="metrics"><article class="metric"><span>Latest imported glucose</span><div><b id="latest">—</b><small>mg/dL</small></div><p id="latestTime">No readings yet</p></article><article class="metric"><span>Average glucose</span><div><b id="average">—</b><small>mg/dL</small></div><p id="readingCount">0 readings</p></article><article class="metric"><span>Time in range</span><div><b id="tir">—</b><small>%</small></div><p>70–180 mg/dL</p></article><article class="metric"><span>Logged events</span><div><b id="eventCount">0</b></div><p id="eventTotal">0 total</p></article></div><div class="twocol"><section class="panel"><div class="sectionhead"><div><span class="eyebrow">GLUCOSE</span><h2>Recent trend</h2></div><button class="small" data-goto="charts">Explore →</button></div><div class="chartwrap homechart"><canvas id="homeChart" aria-label="Recent glucose chart"></canvas></div><p class="subtle">Imported snapshots, not live sensor readings.</p></section><section class="panel"><div class="sectionhead"><div><span class="eyebrow">JOURNAL</span><h2>Recent events</h2></div><button class="small" data-goto="records">All records →</button></div><div id="timeline" class="timeline"></div></section></div></section>
+<section class="view" id="view-charts"><section class="panel"><div class="sectionhead"><div><span class="eyebrow">INTERACTIVE EXPLORER</span><h2>Glucose history</h2></div><select id="range" aria-label="Chart range"><option value="24">24 hours</option><option value="72">3 days</option><option value="168" selected>7 days</option><option value="720">30 days</option><option value="2160">90 days</option><option value="all">All data</option></select></div><div class="chartwrap largechart"><canvas id="chart" aria-label="Interactive glucose chart" tabindex="0"></canvas><div id="chartEmpty" class="empty">Import a LibreView CSV to begin.</div></div><div class="legend"><span><i class="dot green"></i>70–180 mg/dL target</span><span><i class="dot blue"></i>LibreView glucose</span></div><p id="chartDetail" class="chartdetail">Tap the chart to inspect the nearest reading. Drag across the chart to explore.</p><p class="subtle">Gaps longer than 15 minutes are disconnected. The timeline is based on imported data, not live updates.</p></section><section class="panel"><div class="sectionhead"><div><span class="eyebrow">DAILY COMPARISON</span><h2>Daily summary</h2></div></div><div id="dailyTable" class="tablewrap"></div></section></section>
+<section class="view" id="view-analysis"><section class="panel v21-panel" id="v21Panel"><div class="sectionhead"><div><span class="eyebrow">DEEP DIVE / V2.1</span><h2>Explore any period</h2></div></div><div class="v21-controls"><div><label for="v21Range">Reporting window</label><select id="v21Range"><option value="all">All imported history</option><option value="1">Last 24 hours</option><option value="7">Last 7 days</option><option value="14">Last 14 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="custom">Custom dates</option></select></div><div><label for="v21From">From</label><input id="v21From" type="date"></div><div><label for="v21To">Through</label><input id="v21To" type="date"></div></div><div id="v21Summary" class="v21-summary" aria-live="polite"></div><div class="v21-metric-grid" id="v21Metrics"></div><div class="v21-twocol"><div class="v21-inset"><h3>Typical 24-hour profile</h3><p class="subtle">Median with 10th–90th percentile band. Sparse hours are marked as unavailable.</p><div id="v21Profile" class="v21-profile"></div></div><div class="v21-inset"><h3>Notable readings</h3><div id="v21Extremes"></div></div></div></section><div class="metrics analytics"><article class="metric"><span>Mean glucose</span><div><b id="aMean">—</b><small>mg/dL</small></div></article><article class="metric"><span>Variability (CV)</span><div><b id="aCv">—</b><small>%</small></div></article><article class="metric"><span>GMI estimate</span><div><b id="aGmi">—</b><small>%</small></div></article><article class="metric"><span>Observed coverage</span><div><b id="aCoverage">—</b><small>%</small></div><p>Approx. 5-min samples</p></article></div><div class="twocol"><section class="panel"><div class="sectionhead"><div><span class="eyebrow">DISTRIBUTION</span><h2>Time in glucose bands</h2></div></div><div id="bands"></div><p class="subtle">Sample-based percentages; gaps and uneven sampling may bias results.</p></section><section class="panel"><div class="sectionhead"><div><span class="eyebrow">PATTERNS</span><h2>Average by hour</h2></div></div><div id="hourlyBars" class="hourly"></div><p class="subtle">Hourly averages use available LibreView historical readings.</p></section></div><section class="panel"><div class="sectionhead"><div><span class="eyebrow">INTERPRETATION</span><h2>What these metrics mean</h2></div></div><div id="insights" class="insights"></div><p class="subtle">GMI is a glucose-derived estimate, not a laboratory A1c. Longer observation periods improve reliability. This app does not provide medical recommendations.</p></section></section>
+<section class="view" id="view-records"><section class="panel"><div class="sectionhead"><div><span class="eyebrow">DATA EXPLORER</span><h2>All records</h2></div><span id="recordSummary" class="subtle"></span></div><div class="filters"><label>Record type<select id="recordType"><option value="all">All visible</option><option value="glucose">Glucose</option><option value="event">Events</option></select></label><label>Search<input id="recordSearch" type="search" placeholder="Notes, values, dates..."></label><label>From<input id="recordFrom" type="date"></label><label>To<input id="recordTo" type="date"></label><label>Sort<select id="recordSort"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="high">Highest glucose</option><option value="low">Lowest glucose</option></select></label></div><div id="recordsTable" class="tablewrap"></div><div class="pager"><button id="prevPage">← Previous</button><span id="pageInfo"></span><button id="nextPage">Next →</button></div></section></section>
+<section class="view" id="view-tools"><section class="panel v21-panel"><div class="sectionhead"><div><span class="eyebrow">SHARE / CLINICAL EDITION</span><h2>Prepare a doctor review</h2></div></div><p class="subtle">Export a selected, read-only copy of your LibreView readings and events. The clinical viewer can import the JSON without connecting to your browser database. The CSV is for spreadsheets, not guaranteed EHR import.</p><div class="v21-actions"><button id="v21Export" class="primary" type="button">Export clinical JSON</button><button id="v21ExportCsv" class="small" type="button">Export clinical CSV</button><a class="v21-link" href="/clinical/" target="_blank" rel="noopener">Open Clinical Edition ↗</a></div><p id="v21ExportStatus" class="subtle" role="status"></p></section><div class="twocol"><section class="panel"><div class="sectionhead"><div><span class="eyebrow">JOURNAL</span><h2>Log an event</h2></div></div><form id="eventForm"><label>Event type<select id="eventType"><option value="meal">Meal</option><option value="medication">Medication</option><option value="blood_pressure">Blood pressure</option><option value="weight">Weight</option><option value="symptom">Symptom</option><option value="note">Other note</option></select></label><label>When it happened<input id="eventDate" type="datetime-local" required></label><label>Description<input id="eventText" type="text" placeholder="Cod and white rice" maxlength="500" required></label><label>Value or details<input id="eventValue" type="text" placeholder="33 units, 120/78, 215 lb" maxlength="200"></label><label class="check"><input id="estimated" type="checkbox"> Time is estimated</label><button class="primary" type="submit">Save event</button></form></section><section class="panel"><div class="sectionhead"><div><span class="eyebrow">DATA CONTROL</span><h2>Manage your records</h2></div></div><p>Data stays in this browser's IndexedDB. Back up regularly, especially before changing phones or clearing site data.</p><div class="actions"><button id="backupBtn">↓ Download JSON backup</button><button id="restoreBtn">↑ Restore JSON backup</button><input id="backupFile" type="file" accept=".json,application/json" hidden><button id="exportCsvBtn">↓ Export visible CSV</button><button id="clearBtn" class="danger">Delete local records</button></div><p class="subtle">Older Gluroo records remain in backups but are excluded from all V2 dashboards and exports. Only LibreView CSV imports are accepted.</p></section></div></section>
+<footer>SohStx Health V2 · Local-first analytics · Not a medical device</footer></main><script src="app.js?v=21" defer></script><script src="analytics-v21.js?v=21" defer></script><script src="drilldown-v22.js?v=22" defer></script>
+<script src="drilldown-v22.js?v=22" defer></script>
+<script defer src="/lab-analytics.js"></script><script>
+(() => {
+  const button = document.getElementById('brand-install');
+  let promptEvent;
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    promptEvent = event;
+  });
+  button.onclick = async () => {
+    if (promptEvent) {
+      const event = promptEvent;
+      promptEvent = null;
+      await event.prompt();
+    } else if (matchMedia('(display-mode: standalone)').matches) {
+      alert('SohStx Health is running as an installed app.');
+    } else {
+      alert('Open your browser menu and choose Install app or Add to Home screen.');
+    }
+  };
+})();
+</script>
+<script defer src="/meals-tab.js?v=2"></script>
+<script src="./personal-import.js"></script>
+<script src="./health-tabs.js"></script>
+<style>
+  #sohstx-view-menu {
+    flex: 0 0 auto;
+    min-height: 46px;
+    max-width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #91afc7;
+    border-radius: 8px;
+    background: #172a40;
+    color: #fff;
+    font: 600 16px/1.3 system-ui, sans-serif;
+  }
+
+  html[data-reading-view="large"] {
+    --reading-size: 20px;
+  }
+
+  html[data-reading-view="extra"] {
+    --reading-size: 24px;
+  }
+
+  html[data-reading-view] body {
+    font-size: var(--reading-size);
+    line-height: 1.45;
+  }
+
+  html[data-reading-view] main :is(
+    p, label, input, select, textarea, button, small, summary,
+    td, th, .subtle, .legend, .chartdetail, .metric > span,
+    .entry strong, .pager span
+  ) {
+    font-size: var(--reading-size) !important;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  html[data-reading-view] main :is(button, select, summary),
+  html[data-reading-view] main input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]) {
+    min-height: 48px;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  html[data-reading-view] main :is(.metrics, .twocol, .insights, .filters),
+  html[data-reading-view] #view-labs div:has(> details) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html[data-reading-view] #view-labs details {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  html[data-reading-view] #view-labs summary svg {
+    display: block;
+    width: 100%;
+    height: auto !important;
+  }
+
+  html[data-reading-view] #view-labs summary svg text {
+    font-size: 15px;
+  }
+
+  html[data-reading-view="extra"] table.sohstx-stacked,
+  html[data-reading-view="extra"] .sohstx-stacked :is(tbody, tr) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  html[data-reading-view="extra"] .sohstx-stacked thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  html[data-reading-view="extra"] .sohstx-stacked tbody tr {
+    margin-block: 0 16px;
+  }
+
+  html[data-reading-view="extra"] .sohstx-stacked td {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    white-space: normal;
+    text-align: left;
+  }
+
+  html[data-reading-view="extra"] .sohstx-stacked td::before {
+    content: attr(data-reading-label);
+    color: #c3d1e1;
+    font-weight: 700;
+  }
+
+  @media (max-width: 480px) {
+    header.sohstx-banner:has(#sohstx-view-menu) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px 10px;
+    }
+
+    header.sohstx-banner .brand-crop {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    #sohstx-view-menu {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    header.sohstx-banner #brand-install {
+      grid-column: 1 / -1;
+      justify-self: start;
+      max-width: 100%;
+    }
+  }
+</style>
+
+<script>
+(() => {
+  const header = document.querySelector("header.sohstx-banner");
+  const main = document.querySelector("main");
+  if (!header || !main || document.getElementById("sohstx-view-menu")) return;
+
+  const storageKey = "sohstx-reading-view";
+  const menu = document.createElement("select");
+  menu.id = "sohstx-view-menu";
+  menu.setAttribute("aria-label", "View layout");
+
+  for (const [value, label] of [
+    ["compact", "Compact"],
+    ["large", "Large"],
+    ["extra", "Extra large"]
+  ]) {
+    menu.add(new Option("View · " + label, value));
+  }
+
+  header.append(menu);
+
+  let saved;
+  try {
+    saved = localStorage.getItem(storageKey);
+  } catch {}
+  menu.value = ["compact", "large", "extra"].includes(saved) ? saved : "large";
+
+  function labelTables() {
+    if (menu.value !== "extra") return;
+
+    for (const table of main.querySelectorAll("table")) {
+      const head = table.tHead;
+      if (!head || head.rows.length !== 1) continue;
+
+      const headings = Array.from(head.rows[0].cells);
+      const rows = Array.from(table.tBodies).flatMap(body => Array.from(body.rows));
+      const simple = headings.length > 0 &&
+        headings.every(cell => cell.colSpan === 1 && cell.rowSpan === 1) &&
+        rows.every(row => row.cells.length === headings.length &&
+          Array.from(row.cells).every(cell =>
+            cell.tagName === "TD" && cell.colSpan === 1 && cell.rowSpan === 1
+          ));
+
+      table.classList.toggle("sohstx-stacked", simple);
+      if (!simple) continue;
+
+      for (const row of rows) {
+        for (const cell of row.cells) {
+          cell.dataset.readingLabel = headings[cell.cellIndex].textContent.trim();
+        }
+      }
+    }
+  }
+
+  function applyView() {
+    const root = document.documentElement;
+    if (menu.value === "compact") {
+      root.removeAttribute("data-reading-view");
+    } else {
+      root.dataset.readingView = menu.value;
+    }
+    labelTables();
+  }
+
+  menu.addEventListener("change", () => {
+    applyView();
+    try {
+      localStorage.setItem(storageKey, menu.value);
+    } catch {}
+    window.dispatchEvent(new Event("resize"));
+  });
+
+  applyView();
+  new MutationObserver(labelTables).observe(main, {
+    childList: true,
+    subtree: true
+  });
+})();
+</script>
+<style>
+  /* Keep the banner in one row with either reading size. */
+  header.sohstx-banner:has(#sizeSwitch) {
+    display: flex !important;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  header.sohstx-banner #sizeSwitch {
+    box-sizing: border-box;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    max-width: 44px;
+    padding: 0;
+    border: 1px solid #8299af;
+    border-radius: 8px;
+    background: #172a40;
+    color: white;
+    font: 700 17px/1 system-ui, sans-serif;
+  }
+
+  main:has(#view-home.active) > .hero {
+    display: none;
+  }
+
+  #view-home.active {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Keep the existing glucose value and timestamp updated by the app. */
+  #view-home > .metrics {
+    order: -1;
+    display: block !important;
+  }
+
+  #view-home > .metrics > :not(:first-child),
+  #view-home > .twocol {
+    display: none !important;
+  }
+
+  #view-home > .metrics > :first-child {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 10px 14px;
+  }
+
+  #view-home #latestTime {
+    margin: 0;
+  }
+
+  #view-home .food-buttons button,
+  #view-home input[name="when"] {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #homeToday {
+    order: 2;
+  }
+
+  #homeToday ul {
+    margin: 8px 0 16px;
+    padding: 0;
+    list-style: none;
+  }
+
+  #homeToday li {
+    padding: 8px 0;
+    border-bottom: 1px solid #405165;
+    overflow-wrap: anywhere;
+  }
+
+  #homeToday .nutrition-line {
+    margin-bottom: 8px;
+  }
+
+  #view-tools > .hero-actions {
+    margin-bottom: 12px;
+  }
+</style>
+
+<script>
+window.addEventListener("load", () => {
+  if (document.getElementById("sizeSwitch")) return;
+
+  const header = document.querySelector("header.sohstx-banner");
+  const oldMenu = document.querySelector("#sohstx-view-menu, #readingView");
+  const root = document.documentElement;
+  const button = document.createElement("button");
+  button.id = "sizeSwitch";
+  button.type = "button";
+
+  let large = true;
+  try {
+    large = localStorage.getItem("sohstx-reading-view") !== "compact";
+  } catch {}
+
+  function applySize() {
+    const mode = large ? "large" : "compact";
+
+    // Use the existing reading styles from either dropdown version.
+    if (oldMenu) {
+      oldMenu.value = mode;
+      oldMenu.dispatchEvent(new Event("change"));
+    } else {
+      root.dataset.view = mode;
+      if (large) root.dataset.readingView = "large";
+      else root.removeAttribute("data-reading-view");
+      try {
+        localStorage.setItem("sohstx-reading-view", mode);
+      } catch {}
+    }
+
+    button.textContent = large ? "A+" : "A";
+    button.setAttribute("aria-label", "Large text");
+    button.setAttribute("aria-pressed", String(large));
+    button.title = large ? "Switch to small text" : "Switch to large text";
+  }
+
+  if (oldMenu) oldMenu.remove();
+  button.onclick = () => {
+    large = !large;
+    applySize();
+  };
+  header.append(button);
+  applySize();
+
+  const actions = document.querySelector(".hero .hero-actions");
+  const tools = document.getElementById("view-tools");
+  if (actions && tools) tools.prepend(actions);
+}, { once: true });
+</script>
+<style>
+  /* Carry the dark surface all the way to Android's navigation area. */
+  html {
+    min-height: 100%;
+    background: #0b1422;
+  }
+
+  body {
+    min-height: 100dvh;
+    background: #0b1422;
+  }
+
+  /* Compact app bar with room for the existing A / A+ control. */
+  header.sohstx-banner:has(#sizeSwitch) {
+    min-height: 56px;
+    padding: 6px 12px;
+    gap: 8px;
+    background: #071224;
+    border-bottom: 1px solid #24364b;
+  }
+
+  header.sohstx-banner .brand-crop {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 250px;
+    margin-right: auto;
+  }
+
+  header.sohstx-banner .brand-crop img {
+    display: block;
+    width: 100% !important;
+    height: 44px !important;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  @media (display-mode: standalone), (display-mode: fullscreen) {
+    header.sohstx-banner #brand-install {
+      display: none !important;
+    }
+  }
+
+  #view-home > #homeGlucoseTrend {
+    order: 3;
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 14px;
+    border: 1px solid #30465d;
+    border-radius: 16px;
+    background: #132237;
+    color: #eff6ff;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  #homeGlucoseTrend:focus-visible {
+    outline: 3px solid #67d6f5;
+    outline-offset: 3px;
+  }
+
+  #homeGlucoseTrend .trend-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
+
+  #homeGlucoseTrend .trend-link {
+    color: #83dbf6;
+    font-weight: 600;
+  }
+
+  #homeGlucoseTrend .homechart {
+    display: block;
+    width: 100%;
+    height: clamp(118px, 16dvh, 190px);
+    pointer-events: none;
+  }
+
+  #homeGlucoseTrend .trend-caption {
+    color: #c1d0df;
+    font-weight: 400;
+  }
+</style>
+
+<script>
+window.addEventListener("load", () => {
+  const home = document.getElementById("view-home");
+  const canvas = document.getElementById("homeChart");
+  const plot = canvas?.closest(".homechart");
+  const chartsTab = document.querySelector('.tabs [data-tab="charts"]');
+
+  if (!home || !plot || !chartsTab || document.getElementById("homeGlucoseTrend")) {
+    return;
+  }
+
+  const card = document.createElement("button");
+  card.type = "button";
+  card.id = "homeGlucoseTrend";
+  card.setAttribute("aria-label", "Open Charts and Analysis for the latest 24 hours");
+
+  const heading = document.createElement("span");
+  heading.className = "trend-heading";
+
+  const title = document.createElement("strong");
+  title.textContent = "24-hour glucose";
+
+  const link = document.createElement("span");
+  link.className = "trend-link";
+  link.textContent = "Analytics →";
+  heading.append(title, link);
+
+  const caption = document.createElement("small");
+  caption.className = "trend-caption";
+
+  function updateCaption() {
+    const latest = document.getElementById("latestTime")?.textContent.trim();
+    caption.textContent = latest && /\d/.test(latest)
+      ? "24 hours through " + latest.split(" · ")[0]
+      : "Import glucose readings to see your trend.";
+  }
+
+  // Move the existing chart so imports and tab changes still refresh it.
+  card.append(heading, plot, caption);
+  home.append(card);
+  updateCaption();
+
+  const timestamp = document.getElementById("latestTime");
+  if (timestamp) {
+    new MutationObserver(updateCaption).observe(timestamp, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+  }
+
+  card.addEventListener("click", () => {
+    chartsTab.click();
+    const range = document.getElementById("range");
+    if (range && Array.from(range.options).some(option => option.value === "24")) {
+      range.value = "24";
+      range.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    chartsTab.scrollIntoView({ block: "nearest" });
+  });
+
+  requestAnimationFrame(() => {
+    if (typeof drawAll === "function") drawAll();
+  });
+}, { once: true });
+</script>
+<style>
+  /* A readable brand header, with the size switch still within reach. */
+  body header.sohstx-banner:has(#sizeSwitch) {
+    min-height: 72px;
+    padding: 8px clamp(12px, 3vw, 28px);
+    gap: 12px;
+    background: #081627;
+    border-bottom: 1px solid #284057;
+  }
+
+  body header.sohstx-banner .brand-crop {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 390px;
+    margin-right: auto;
+  }
+
+  body header.sohstx-banner .brand-crop img {
+    display: block;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 78px;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  /* Give the reading its own line of emphasis. Allow the date to wrap. */
+  #view-home > .metrics > .metric:first-child {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    justify-content: start;
+    gap: 2px 14px;
+    padding: 14px 18px;
+  }
+
+  #view-home > .metrics > .metric:first-child > span {
+    grid-column: 1 / -1;
+    color: #c4d5e5;
+    font-weight: 600;
+  }
+
+  #view-home #latest {
+    font-size: clamp(36px, 5vw, 48px) !important;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+
+  #view-home #latestTime {
+    align-self: center;
+    line-height: 1.35;
+    color: #b7cadd;
+  }
+
+  /* Strong section titles make Home easier to scan in either size. */
+  #view-home .panel h2,
+  #view-home #homeGlucoseTrend .trend-heading strong {
+    font-size: 1.35em;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+  }
+
+  /* Include phones reporting a wider portrait viewport. */
+  @media (max-width: 700px),
+         (orientation: portrait) and (max-width: 1100px) {
+    body main {
+      padding-bottom: calc(100px + env(safe-area-inset-bottom));
+    }
+
+    body main nav.tabs {
+      position: fixed;
+      z-index: 20;
+      inset: auto 0 0;
+      display: flex !important;
+      align-items: stretch;
+      gap: 3px;
+      margin: 0;
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      background: #101f30;
+      border: 0;
+      border-top: 1px solid #344b61;
+      border-radius: 0;
+    }
+
+    body main nav.tabs .tab {
+      flex: 1 0 auto;
+      width: auto;
+      min-width: 56px;
+      min-height: 50px;
+      padding: 8px 10px;
+      white-space: nowrap;
+      border: 0;
+      border-radius: 10px;
+      color: #b9c9db;
+      background: transparent;
+    }
+
+    body main nav.tabs .tab.active {
+      background: #203e4c;
+      color: #91f0d1;
+      box-shadow: inset 0 3px #63dfb6;
+    }
+
+    body main nav.tabs .tab:focus-visible {
+      outline: 2px solid #91f0d1;
+      outline-offset: -3px;
+    }
+  }
+</style>
+<style>
+  @media (max-width: 700px),
+         (orientation: portrait) and (max-width: 1100px) {
+    body:has(#view-home.active) {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      margin: 0;
+    }
+
+    body:has(#view-home.active) > header {
+      flex: none;
+    }
+
+    body:has(#view-home.active) > main {
+      display: flex;
+      flex-direction: column;
+      flex: 1 0 auto;
+      box-sizing: border-box;
+      width: 100%;
+      margin-block: 0;
+      padding-bottom: var(--home-nav-height, 72px);
+    }
+
+    body main #view-home.active {
+      display: flex;
+      flex-direction: column;
+      flex: 1 0 auto;
+    }
+
+    #view-home.active > #homeGlucoseTrend {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      flex: 1 0 auto;
+    }
+
+    #view-home.active > #homeGlucoseTrend .homechart {
+      position: relative;
+      flex: 1 0 145px;
+      height: auto;
+      min-height: 145px;
+      max-height: none;
+    }
+
+    #homeGlucoseTrend .homechart canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    body:has(#view-home.active) main > footer {
+      flex: none;
+      margin-block: 0;
+      padding-block: 10px;
+    }
+  }
+</style>
+
+<script>
+window.addEventListener("load", () => {
+  const nav = document.querySelector("main nav.tabs");
+  const plot = document.querySelector("#homeGlucoseTrend .homechart");
+  if (!nav || !plot) return;
+
+  // Reserve exactly the space the bottom bar occupies in A or A+.
+  function measureNav() {
+    const height = Math.ceil(nav.getBoundingClientRect().height);
+    document.documentElement.style.setProperty(
+      "--home-nav-height", (height + 6) + "px"
+    );
+  }
+  new ResizeObserver(measureNav).observe(nav);
+  measureNav();
+
+  // Redraw the canvas at its new size so the line and labels stay sharp.
+  let frame = 0;
+  new ResizeObserver(() => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      if (plot.clientWidth && plot.clientHeight && typeof drawAll === "function") {
+        drawAll();
+      }
+    });
+  }).observe(plot);
+}, { once: true });
+</script>
+<style>
+@media (max-width: 700px),
+       (orientation: portrait) and (max-width: 1100px) {
+
+  html:root {
+    --phone-text: 22px;
+    --phone-detail: 18px;
+    --phone-heading: 29px;
+    --phone-reading: 52px;
+    --phone-tab-text: 20px;
+    --phone-tab-height: 64px;
+  }
+
+  html:root:has(#sizeSwitch[aria-pressed="true"]) {
+    --phone-text: 30px;
+    --phone-detail: 24px;
+    --phone-heading: 38px;
+    --phone-reading: 68px;
+    --phone-tab-text: 26px;
+    --phone-tab-height: 80px;
+  }
+
+  /* Follow the visible switch across all Personal tabs. */
+  html:has(#sizeSwitch) main {
+    font-size: var(--phone-text);
+    line-height: 1.4;
+  
+  }
+
+  html:has(#sizeSwitch) main :is(
+    small, time, .subtle, .metric > span, #latestTime,
+    .trend-caption, .food-buttons button small
+  ) {
+    font-size: var(--phone-detail) !important;
+    line-height: 1.35;
+  }
+
+  html:has(#sizeSwitch) main h2,
+  html:has(#sizeSwitch) #homeGlucoseTrend .trend-heading strong {
+    font-size: var(--phone-heading) !important;
+    line-height: 1.2;
+  }
+
+  html:has(#sizeSwitch) #view-home #latest {
+    font-size: var(--phone-reading) !important;
+  }
+
+  html:has(#sizeSwitch) .food-buttons button {
+    white-space: normal;
+    overflow-wrap: break-word;
+    padding: 12px;
+  }
+
+  html:has(#sizeSwitch) body main nav.tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-flow: row;
+    gap: 6px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    overflow: visible;
+  }
+
+  html:has(#sizeSwitch) body main nav.tabs .tab {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--phone-tab-height);
+    height: auto;
+    padding: 8px 4px;
+    font-size: var(--phone-tab-text) !important;
+    font-weight: 700;
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: break-word;
+    touch-action: manipulation;
+  }
+
+  html:has(#sizeSwitch) body > main {
+    padding-bottom: var(--home-nav-height, 190px);
+  }
+}
+</style>
+<style>
+  /* Give the timestamp a full line on either phone. */
+  @media (orientation: portrait) and (max-width: 1100px) {
+    #view-home > .metrics > .metric:first-child {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 3px;
+    }
+
+    #view-home #latestTime {
+      grid-column: 1 / -1;
+      margin: 0;
+      line-height: 1.25;
+    }
+  }
+
+  /* Use the extra room on wider portrait layouts, like the Moto screenshots. */
+  @media (orientation: portrait) and (min-width: 600px) and (max-width: 1100px) {
+    html:root {
+      --phone-text: 25px;
+      --phone-detail: 20px;
+      --phone-heading: 32px;
+      --phone-reading: 58px;
+      --phone-tab-text: 22px;
+    }
+
+    html:root:has(#sizeSwitch[aria-pressed="true"]) {
+      --phone-text: 32px;
+      --phone-detail: 25px;
+      --phone-heading: 40px;
+      --phone-reading: 70px;
+      --phone-tab-text: 27px;
+    }
+
+    body header.sohstx-banner .brand-crop {
+      max-width: min(55%, 500px);
+    }
+
+    body header.sohstx-banner .brand-crop img {
+      max-height: 100px;
+    }
+
+    #view-home .food-buttons button {
+      min-height: 84px;
+      padding: 14px 16px;
+      text-align: left;
+    }
+
+    html:has(#sizeSwitch[aria-pressed="true"]) #view-home .food-buttons button {
+      min-height: 96px;
+    }
+  }
+</style>
+</body>
+</html>
