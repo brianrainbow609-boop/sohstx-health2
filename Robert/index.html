@@ -10,20 +10,93 @@
   content:''; position:absolute; left:clamp(26px, 8vw, 60px); top:100%;
   border:8px solid transparent; border-top-color:#fff6df; border-bottom:0;
 }
-</style><main><header><small>SOHSTX / TIRE SHOP RPG</small><h1>That Time I Got<br>Reincarnated as <em>Robert</em></h1></header><aside><b id="lv"></b><b id="cash"></b><b id="xp"></b></aside><div class="meters"><div><label>FOREMAN</label><b>Robert</b><progress id="charge" max="4"></progress></div><div><label>WORK ORDER</label><b id="job"></b><progress id="remaining"></progress></div></div><div class="arena" aria-label="Robert in work blues facing a truck tire"><span class="speech" id="speech" hidden></span><i class="tech"></i><i class="wheel"></i></div><p id="log" role="status"></p><section class="actions"><button id="burst">Impact burst</button><button id="pause">Clock in</button></section><section><h2>Tool bench</h2><div class="row"><div><strong>Impact wrench</strong><span>+1 work every stroke</span></div><button id="buy"></button></div></section><section><h2 id="crewTitle">The nameless shop rag</h2><p id="lore"></p><div id="naming"><label for="nickname">GIVE IT A NAME</label><input id="nickname" maxlength="22" placeholder="e.g. Greasewick"><div class="actions"><button id="torque">Torque hand</button><button id="runner">Parts runner</button></div></div></section></main><script>
+
+.tree-route{margin:12px 0;border:1px solid #476064;border-radius:8px;padding:10px}
+.tree-route summary{cursor:pointer;font-weight:750;padding:8px;color:#ffd078}
+.tree-route .row{border-top:1px solid #476064}
+.tree-route button{min-width:92px}
+</style><main><header><small>SOHSTX / TIRE SHOP RPG</small><h1>That Time I Got<br>Reincarnated as <em>Robert</em></h1></header><aside><b id="lv"></b><b id="cash"></b><b id="xp"></b></aside><div class="meters"><div><label>FOREMAN</label><b>Robert</b><progress id="charge" max="4"></progress></div><div><label>WORK ORDER</label><b id="job"></b><progress id="remaining"></progress></div></div><div class="arena" aria-label="Robert in work blues facing a truck tire"><span class="speech" id="speech" hidden></span><i class="tech"></i><i class="wheel"></i></div><p id="log" role="status"></p><section class="actions"><button id="burst">Impact burst</button><button id="pause">Clock in</button></section><section><h2>Shop tech tree</h2><p>Spend ticket cash on any route. Buy the first rank of a skill to open the next one in that route.</p><div id="tree"></div></section><section><h2 id="crewTitle">The nameless shop rag</h2><p id="lore"></p><div id="naming"><label for="nickname">GIVE IT A NAME</label><input id="nickname" maxlength="22" placeholder="e.g. Greasewick"><div class="actions"><button id="torque">Torque hand</button><button id="runner">Parts runner</button></div></div></section></main><script>
 const el=id=>document.getElementById(id), key='sohstx.robert.shift.v1';
 let s={done:0,cash:0,tool:1,hp:12,charge:0,name:'',role:'',message:'You wake up wearing Robert’s name patch. The first ticket says “quick flat.” Somebody underlined quick twice.'};
 try{Object.assign(s,JSON.parse(localStorage.getItem(key))||{})}catch{}
 let running=false;
 const jobs=['Slow leak','Seized lug','Mystery vibration','Dual assembly','Magnum lot call'];
-const level=()=>1+Math.floor(s.done/3),maxHP=()=>12+3*s.done+(s.done%5===4?10:0),price=()=>6*s.tool;
+const level=()=>1+Math.floor(s.done/3),maxHP=()=>12+3*s.done+(s.done%5===4?10:0);
 function save(){try{localStorage.setItem(key,JSON.stringify(s))}catch{}}
+const routes = [
+  ['Tools', [
+    ['tool','Impact wrench','+1 work per stroke and +3 burst power per rank.',6],
+    ['sockets','Impact sockets','+2 work per stroke on seized lugs per rank.',10],
+    ['breaker','Breaker bar','+1 work per stroke on every ticket per rank.',16],
+    ['impact','High-torque impact','+5 impact burst power per rank.',24]
+  ]],
+  ['Equipment', [
+    ['jack','Floor jack','+1 starting work on every new ticket per rank.',8],
+    ['changer','Tire machine','+3 work per stroke on dual assemblies per rank.',12],
+    ['balancer','Wheel balancer','+3 work per stroke on mystery vibrations per rank.',16],
+    ['compressor','Shop compressor','Impact burst needs 1 fewer charge per rank.',24]
+  ]],
+  ['Experience', [
+    ['diagnosis','Leak diagnosis','+2 work per stroke on slow leaks per rank.',8],
+    ['estimate','Estimating','Earn $2 more per ticket per rank.',12],
+    ['road','Road service','+3 work per stroke on Magnum calls per rank.',16],
+    ['foreman','Foreman instincts','+2 work per stroke on every ticket per rank.',24]
+  ]]
+];
+const rank = id => s[id] || 0;
+const chargeNeeded = () => 4 - rank('compressor');
+const burstPower = () => (s.tool + level()) * 3 + 5 * rank('impact');
+function strokePower() {
+  const specialty = ['diagnosis','sockets','balancer','changer','road'][s.done % jobs.length];
+  const bonus = specialty === 'diagnosis' || specialty === 'sockets' ? 2 : 3;
+  return s.tool + level() + rank('breaker') + 2 * rank('foreman') +
+    bonus * rank(specialty) + (s.role === 'torque' ? 2 : 0);
+}
+const skillViews = [];
+for (const [title, skills] of routes) {
+  const panel = document.createElement('details');
+  panel.className = 'tree-route';
+  panel.open = title === 'Tools';
+  panel.innerHTML = '<summary></summary>';
+  el('tree').append(panel);
+  skills.forEach(([id, name, effect, base], index) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = '<div><strong></strong><span></span><span></span></div><button></button>';
+    panel.append(row);
+    const [description, status] = row.querySelectorAll('span');
+    const button = row.querySelector('button');
+    row.querySelector('strong').textContent = name;
+    description.textContent = effect;
+    const prerequisite = skills[index - 1];
+    const cap = id === 'compressor' ? 2 : id === 'tool' ? Infinity : 3;
+    const cost = () => base * (rank(id) + (id === 'tool' ? 0 : 1));
+    const locked = () => prerequisite && !rank(prerequisite[0]);
+    button.onclick = () => {
+      if (locked() || rank(id) >= cap || s.cash < cost()) return;
+      s.cash -= cost();
+      s[id] = rank(id) + 1;
+      if (id === 'compressor') s.charge = Math.min(s.charge, chargeNeeded());
+      save();
+      render();
+    };
+    skillViews.push(() => {
+      const n = rank(id);
+      status.textContent = locked() ? 'Requires ' + prerequisite[1] : 'Rank ' + n + (Number.isFinite(cap) ? '/' + cap : '');
+      button.disabled = !!locked() || n >= cap || s.cash < cost();
+      button.textContent = locked() ? 'Locked' : n >= cap ? 'Max rank' : (n ? 'Upgrade $' : 'Unlock $') + cost();
+    });
+  });
+  skillViews.push(() => {
+    panel.querySelector('summary').textContent = title + ' · ' + skills.filter(([id]) => rank(id)).length + '/4 unlocked';
+  });
+}
 function render(){
-el('lv').textContent='Lv '+level();el('cash').textContent='$'+s.cash;el('xp').textContent=s.done%3+'/3 jobs';el('job').textContent=jobs[s.done%5];el('remaining').max=maxHP();el('remaining').value=s.hp;el('charge').value=s.charge;el('log').textContent=s.message;el('pause').textContent=running?'Pause':'Clock in';el('burst').disabled=!running||s.charge<4;el('burst').textContent=s.charge===4?'Impact burst ⚡':'Charging '+s.charge+'/4';el('buy').textContent='Upgrade $'+price();el('buy').disabled=s.cash<price();el('naming').hidden=level()<2||!!s.name;el('crewTitle').textContent=s.name||'The nameless shop rag';el('lore').textContent=s.name?(s.role==='torque'?'Torque hand · Adds 2 work every stroke.':'Parts runner · Earns $4 extra per ticket.'):(level()<2?'Something in the rag bin just sneezed. Finish three tickets to learn its name.':'The rag climbs out and waits for you to speak. Give it a name and a calling. Torque hands add 2 work per stroke. Parts runners earn $4 extra per ticket.');document.querySelector('.tech').style.animationPlayState=running?'running':'paused'}
-function stroke(power){s.hp-=power;if(s.hp<=0){const reward=6+level()+(s.role==='runner'?4:0);s.done++;s.cash+=reward;s.hp=maxHP();s.message='Ticket closed. +$'+reward+'. '+(s.done===3?'Something in the rag bin wants a name.':s.done%3===0?'Level up! Robert works harder each stroke.':'Next up: '+jobs[s.done%5]+'.')}save();render()}
-el('pause').onclick=()=>{running=!running;render()};el('buy').onclick=()=>{if(s.cash>=price()){s.cash-=price();s.tool++;save();render()}};el('burst').onclick=()=>{if(running&&s.charge===4){s.charge=0;stroke((s.tool+level())*3)}};
+el('lv').textContent='Lv '+level();el('cash').textContent='$'+s.cash;el('xp').textContent=s.done%3+'/3 jobs';el('job').textContent=jobs[s.done%5];el('remaining').max=maxHP();el('remaining').value=s.hp;el('charge').max=chargeNeeded();el('charge').value=s.charge;el('log').textContent=s.message;el('pause').textContent=running?'Pause':'Clock in';el('burst').disabled=!running||s.charge<chargeNeeded();el('burst').textContent=s.charge===chargeNeeded()?'Impact burst ⚡':'Charging '+s.charge+'/'+chargeNeeded();skillViews.forEach(update => update());el('naming').hidden=level()<2||!!s.name;el('crewTitle').textContent=s.name||'The nameless shop rag';el('lore').textContent=s.name?(s.role==='torque'?'Torque hand · Adds 2 work every stroke.':'Parts runner · Earns $4 extra per ticket.'):(level()<2?'Something in the rag bin just sneezed. Finish three tickets to learn its name.':'The rag climbs out and waits for you to speak. Give it a name and a calling. Torque hands add 2 work per stroke. Parts runners earn $4 extra per ticket.');document.querySelector('.tech').style.animationPlayState=running?'running':'paused'}
+function stroke(power){s.hp-=power;if(s.hp<=0){const reward=6+level()+2*rank('estimate')+(s.role==='runner'?4:0);s.done++;s.cash+=reward;s.hp=maxHP()-rank('jack');s.message='Ticket closed. +$'+reward+'. '+(s.done===3?'Something in the rag bin wants a name.':s.done%3===0?'Level up! Robert works harder each stroke.':'Next up: '+jobs[s.done%5]+'.')}save();render()}
+el('pause').onclick=()=>{running=!running;render()};el('burst').onclick=()=>{if(running&&s.charge===chargeNeeded()){s.charge=0;stroke(burstPower())}};
 for(const role of ['torque','runner'])el(role).onclick=()=>{const name=el('nickname').value.trim();if(!name){el('nickname').focus();return}if(level()<2||s.name)return;s.name=name;s.role=role;s.message=name+' hops onto the service cart. Your first crew member clocks in.';save();render()};
-setInterval(()=>{if(running){s.charge=Math.min(4,s.charge+1);stroke(s.tool+level()+(s.role==='torque'?2:0))}},1000);render();
+setInterval(()=>{if(running){s.charge=Math.min(chargeNeeded(),s.charge+1);stroke(strokePower())}},1000);render();
 const robertLines = [
   "I DON'T HAVE TIME FOR THIS SHIT",
   "IM ABOUT TO LOSE MY SHIT",
@@ -43,3 +116,4 @@ function scheduleSpeech() {
 }
 scheduleSpeech();
 </script></html>
+
