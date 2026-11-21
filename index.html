@@ -419,4 +419,143 @@ header.sohstx-banner{display:flex;flex-direction:row;align-items:center;justify-
   });
 })();
 </script>
+<style>
+  /* Keep the banner in one row with either reading size. */
+  header.sohstx-banner:has(#sizeSwitch) {
+    display: flex !important;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  header.sohstx-banner #sizeSwitch {
+    box-sizing: border-box;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    max-width: 44px;
+    padding: 0;
+    border: 1px solid #8299af;
+    border-radius: 8px;
+    background: #172a40;
+    color: white;
+    font: 700 17px/1 system-ui, sans-serif;
+  }
+
+  main:has(#view-home.active) > .hero {
+    display: none;
+  }
+
+  #view-home.active {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Keep the existing glucose value and timestamp updated by the app. */
+  #view-home > .metrics {
+    order: -1;
+    display: block !important;
+  }
+
+  #view-home > .metrics > :not(:first-child),
+  #view-home > .twocol {
+    display: none !important;
+  }
+
+  #view-home > .metrics > :first-child {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 10px 14px;
+  }
+
+  #view-home #latestTime {
+    margin: 0;
+  }
+
+  #view-home .food-buttons button,
+  #view-home input[name="when"] {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #homeToday {
+    order: 2;
+  }
+
+  #homeToday ul {
+    margin: 8px 0 16px;
+    padding: 0;
+    list-style: none;
+  }
+
+  #homeToday li {
+    padding: 8px 0;
+    border-bottom: 1px solid #405165;
+    overflow-wrap: anywhere;
+  }
+
+  #homeToday .nutrition-line {
+    margin-bottom: 8px;
+  }
+
+  #view-tools > .hero-actions {
+    margin-bottom: 12px;
+  }
+</style>
+
+<script>
+window.addEventListener("load", () => {
+  if (document.getElementById("sizeSwitch")) return;
+
+  const header = document.querySelector("header.sohstx-banner");
+  const oldMenu = document.querySelector("#sohstx-view-menu, #readingView");
+  const root = document.documentElement;
+  const button = document.createElement("button");
+  button.id = "sizeSwitch";
+  button.type = "button";
+
+  let large = true;
+  try {
+    large = localStorage.getItem("sohstx-reading-view") !== "compact";
+  } catch {}
+
+  function applySize() {
+    const mode = large ? "large" : "compact";
+
+    // Use the existing reading styles from either dropdown version.
+    if (oldMenu) {
+      oldMenu.value = mode;
+      oldMenu.dispatchEvent(new Event("change"));
+    } else {
+      root.dataset.view = mode;
+      if (large) root.dataset.readingView = "large";
+      else root.removeAttribute("data-reading-view");
+      try {
+        localStorage.setItem("sohstx-reading-view", mode);
+      } catch {}
+    }
+
+    button.textContent = large ? "A+" : "A";
+    button.setAttribute("aria-label", "Large text");
+    button.setAttribute("aria-pressed", String(large));
+    button.title = large ? "Switch to small text" : "Switch to large text";
+  }
+
+  if (oldMenu) oldMenu.remove();
+  button.onclick = () => {
+    large = !large;
+    applySize();
+  };
+  header.append(button);
+  applySize();
+
+  const actions = document.querySelector(".hero .hero-actions");
+  const tools = document.getElementById("view-tools");
+  if (actions && tools) tools.prepend(actions);
+}, { once: true });
+</script>
 </body></html>
