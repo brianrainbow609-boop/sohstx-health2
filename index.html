@@ -938,13 +938,61 @@ window.addEventListener("load", () => {
   html:has(#sizeSwitch) main {
     font-size: var(--phone-text);
     line-height: 1.4;
+  
   }
 
   html:has(#sizeSwitch) main :is(
-    p, li, label, input, select, textarea, summary, button,
-    td, th, .entry strong, .food-basket span, .trend-link
+    small, time, .subtle, .metric > span, #latestTime,
+    .trend-caption, .food-buttons button small
   ) {
-    font-size: var(--phone-text) !important;
+    font-size: var(--phone-detail) !important;
     line-height: 1.35;
- 
-  < /body></html>
+  }
+
+  html:has(#sizeSwitch) main h2,
+  html:has(#sizeSwitch) #homeGlucoseTrend .trend-heading strong {
+    font-size: var(--phone-heading) !important;
+    line-height: 1.2;
+  }
+
+  html:has(#sizeSwitch) #view-home #latest {
+    font-size: var(--phone-reading) !important;
+  }
+
+  html:has(#sizeSwitch) .food-buttons button {
+    white-space: normal;
+    overflow-wrap: break-word;
+    padding: 12px;
+  }
+
+  html:has(#sizeSwitch) body main nav.tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-flow: row;
+    gap: 6px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    overflow: visible;
+  }
+
+  html:has(#sizeSwitch) body main nav.tabs .tab {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--phone-tab-height);
+    height: auto;
+    padding: 8px 4px;
+    font-size: var(--phone-tab-text) !important;
+    font-weight: 700;
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: break-word;
+    touch-action: manipulation;
+  }
+
+  html:has(#sizeSwitch) body > main {
+    padding-bottom: var(--home-nav-height, 190px);
+  }
+}
+</style>
+</body>
+</html>
