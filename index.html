@@ -912,4 +912,39 @@ window.addEventListener("load", () => {
   }).observe(plot);
 }, { once: true });
 </script>
-</body></html>
+<style>
+@media (max-width: 700px),
+       (orientation: portrait) and (max-width: 1100px) {
+
+  html:root {
+    --phone-text: 22px;
+    --phone-detail: 18px;
+    --phone-heading: 29px;
+    --phone-reading: 52px;
+    --phone-tab-text: 20px;
+    --phone-tab-height: 64px;
+  }
+
+  html:root:has(#sizeSwitch[aria-pressed="true"]) {
+    --phone-text: 30px;
+    --phone-detail: 24px;
+    --phone-heading: 38px;
+    --phone-reading: 68px;
+    --phone-tab-text: 26px;
+    --phone-tab-height: 80px;
+  }
+
+  /* Follow the visible switch across all Personal tabs. */
+  html:has(#sizeSwitch) main {
+    font-size: var(--phone-text);
+    line-height: 1.4;
+  }
+
+  html:has(#sizeSwitch) main :is(
+    p, li, label, input, select, textarea, summary, button,
+    td, th, .entry strong, .food-basket span, .trend-link
+  ) {
+    font-size: var(--phone-text) !important;
+    line-height: 1.35;
+ 
+  < /body></html>
