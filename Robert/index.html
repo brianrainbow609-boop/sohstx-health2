@@ -16,6 +16,13 @@
 .tree-route .row{border-top:1px solid #476064}
 .tree-route button{min-width:92px}
 nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:12px}nav button{background:#324347;color:white;padding:6px;font-size:15px}nav button[aria-pressed=true]{background:#ffd078;color:#182324}.row button{flex-shrink:0}#quest progress{display:block;margin:10px 0}
+
+.arena{--robert-height:94px}.tech{height:var(--robert-height)}
+.crew-run{position:absolute;bottom:0;left:8%;z-index:2;width:36%;height:var(--robert-height);pointer-events:none}
+.crew-run svg{position:absolute;bottom:0;width:auto;height:var(--height);overflow:visible;animation:scurry var(--pace) linear var(--delay) infinite}
+@keyframes scurry{0%{left:0;transform:scaleX(1)}49.9%{left:100%;transform:scaleX(1)}50%{left:100%;transform:scaleX(-1)}99.9%{left:0;transform:scaleX(-1)}}
+@media(prefers-reduced-motion:reduce){.crew-run svg{animation:none;left:var(--rest)}}
+.crew-card{border-top:1px solid #476064;padding:10px 0}.crew-card form{display:flex;gap:6px;align-items:center}.crew-card input{min-width:0}
 </style><main><header><small>SOHSTX / TIRE SHOP RPG</small><h1>That Time I Got<br>Reincarnated as <em>Robert</em></h1></header><aside><b id="lv"></b><b id="cash"></b><b id="xp"></b></aside><nav aria-label="Game screens"><button data-screen="shop" aria-pressed="true">Shop</button><button data-screen="skills" aria-pressed="false">Tech tree</button><button data-screen="hiring" aria-pressed="false">Hiring</button><button data-screen="quest" aria-pressed="false">Quests</button></nav><div id="shop"><div class="meters"><div><label>FOREMAN</label><b>Robert</b><progress id="charge" max="4"></progress></div><div><label>WORK ORDER</label><b id="job"></b><progress id="remaining"></progress></div></div><div class="arena" aria-label="Robert in work blues facing a truck tire"><span class="speech" id="speech" hidden></span><i class="tech"></i><i class="wheel"></i></div><p id="log" role="status"></p><section class="actions"><button id="burst">Impact burst</button><button id="pause">Clock in</button></section><section><h2>Tool bench</h2><div id="bench"></div></section><section><h2 id="crewTitle">The nameless shop rag</h2><p id="lore"></p><div id="naming"><label for="nickname">GIVE IT A NAME</label><input id="nickname" maxlength="22" placeholder="e.g. Greasewick"><div class="actions"><button id="torque">Torque hand</button><button id="runner">Parts runner</button></div></div></section></div><section id="skills" hidden><h2>Tech tree</h2><p id="points"></p><p>Each rank costs 1 point. First ranks open the next skill in their route.</p><div id="tree"></div></section>
 <section id="hiring" hidden><h2>Hire tire technicians</h2><p>Pay a one-time hiring bonus. Your technicians work alongside Robert whenever he’s clocked in.</p><div id="roster"></div></section>
 <section id="quest" hidden><h2>Owner’s work orders</h2><p>Owner MrVanBlairComm wants this shop to outlast GM Ray. Every fifth ticket, Ray slips an extra inspection onto the Magnum job.</p><h3 id="order"></h3><p id="brief"></p><progress id="orderProgress"></progress><p id="count"></p><button id="claim"></button></section></main><script>
@@ -24,6 +31,7 @@ let s={done:0,cash:0,tool:1,hp:12,charge:0,name:'',role:'',message:'You wake up 
 try{Object.assign(s,JSON.parse(localStorage.getItem(key))||{})}catch{}
 s.points ??= s.done;
 s.hires ??= [];
+s.workers ??= {};
 s.orders ??= 0;
 s.orderStart ??= s.done;
 let running=false;
@@ -111,8 +119,11 @@ const technicians = [
   ['inez','Inez · Fleet tech',48,3],
   ['otis','Otis · Lead tech',95,6]
 ];
+function workerLevel(id) {
+  return s.hires.includes(id) ? (s.workers[id]?.level || 1) : 0;
+}
 function crewPower() {
-  return technicians.reduce((sum,[id,,,power]) => sum + (s.hires.includes(id) ? power : 0),0);
+  return technicians.reduce((sum,[id,,,power]) => sum + workerLevel(id) * power,0);
 }
 function cashRow(parent,title,description,offer,buy) {
   const row = document.createElement('div');
@@ -146,12 +157,60 @@ for (const [id,name,base,effect] of [
     return {cost,label:(n ? 'Rank '+n+' · Upgrade' : 'Buy')+' $'+cost};
   },() => { s[id] = rank(id) + 1 });
 }
-for (const [id,name,cost,power] of technicians) {
-  cashRow('roster',name,'+'+power+' work per stroke.',() => {
-    const finished = s.hires.includes(id);
-    return {cost,finished,label:finished ? 'On crew' : 'Hire $'+cost};
-  },() => s.hires.push(id));
-}
+technicians.forEach(([id,title,hireCost,power],index) => {
+  const [defaultName,role] = title.split(' · ');
+  const card = document.createElement('div');
+  card.className = 'crew-card';
+  card.innerHTML = '<div class="row"><div><strong></strong><span></span></div><button></button></div><form><input maxlength="22" required><button>Rename</button></form>';
+  el('roster').append(card);
+  const form = card.querySelector('form');
+  const input = form.querySelector('input');
+  input.setAttribute('aria-label','New name for '+role);
+  const upgrade = card.querySelector('button');
+  const runner = document.createElement('div');
+  runner.className = 'crew-run';
+  runner.innerHTML = '<svg viewBox="0 0 15 20" role="img"><title></title><path fill="#ffce9b" d="M4 3h7v5H4z"/><path fill="#ffbc45" d="M3 1h7l1 2h3v2H3z"/><path fill="currentColor" d="M4 8h6l2 3 3-1v2l-4 2-2-3v4H4l-2-3-1 1-1-2z"/><path fill="#dae4e3" d="M4 15h3l-3 5H1zm4 0h2l3 3h2v2h-4z"/></svg>';
+  runner.style.color = ['#68dbb6','#ff916e','#a9bfff'][index];
+  runner.style.setProperty('--pace',(3.4 + index * .6)+'s');
+  runner.style.setProperty('--delay',(-index * 1.3)+'s');
+  runner.style.setProperty('--rest',(index * 35)+'%');
+  document.querySelector('.arena').append(runner);
+  const price = level => level ? hireCost + level * 2 : hireCost;
+  upgrade.onclick = () => {
+    const level = workerLevel(id);
+    if (level >= 100 || s.cash < price(level)) return;
+    s.cash -= price(level);
+    if (!level) s.hires.push(id);
+    s.workers[id] ??= {};
+    s.workers[id].level = level + 1;
+    save();
+    render();
+  };
+  form.onsubmit = event => {
+    event.preventDefault();
+    const name = input.value.trim();
+    if (!name || !workerLevel(id)) return;
+    s.workers[id] ??= {};
+    s.workers[id].name = name;
+    input.value = '';
+    save();
+    render();
+  };
+  skillViews.push(() => {
+    const level = workerLevel(id);
+    const name = s.workers[id]?.name || defaultName;
+    card.querySelector('strong').textContent = name+' · '+role;
+    card.querySelector('span').textContent = level ? 'Lv '+level+'/100 · +'+(level*power)+' work per stroke' : '+'+power+' work per stroke';
+    form.hidden = !level;
+    form.style.display = level ? 'flex' : 'none';
+    input.placeholder = name;
+    upgrade.textContent = level === 100 ? 'Max level' : (level ? 'Upgrade $' : 'Hire $')+price(level);
+    upgrade.disabled = level >= 100 || s.cash < price(level);
+    runner.hidden = !level;
+    runner.style.setProperty('--height',(8 + (level-1)*12/99)+'%');
+    runner.querySelector('title').textContent = name+' · Level '+level;
+  });
+});
 const orders = [
   ['Clear the backlog','MrVanBlairComm wants the waiting trucks back on the road.',3,12],
   ['Pass the spot audit','Ray flagged the bay. Give MrVanBlairComm five closed tickets for the audit.',5,24],
@@ -204,5 +263,6 @@ function scheduleSpeech() {
 }
 scheduleSpeech();
 </script></html>
+
 
 
