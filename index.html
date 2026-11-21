@@ -994,5 +994,57 @@ window.addEventListener("load", () => {
   }
 }
 </style>
+<style>
+  /* Give the timestamp a full line on either phone. */
+  @media (orientation: portrait) and (max-width: 1100px) {
+    #view-home > .metrics > .metric:first-child {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 3px;
+    }
+
+    #view-home #latestTime {
+      grid-column: 1 / -1;
+      margin: 0;
+      line-height: 1.25;
+    }
+  }
+
+  /* Use the extra room on wider portrait layouts, like the Moto screenshots. */
+  @media (orientation: portrait) and (min-width: 600px) and (max-width: 1100px) {
+    html:root {
+      --phone-text: 25px;
+      --phone-detail: 20px;
+      --phone-heading: 32px;
+      --phone-reading: 58px;
+      --phone-tab-text: 22px;
+    }
+
+    html:root:has(#sizeSwitch[aria-pressed="true"]) {
+      --phone-text: 32px;
+      --phone-detail: 25px;
+      --phone-heading: 40px;
+      --phone-reading: 70px;
+      --phone-tab-text: 27px;
+    }
+
+    body header.sohstx-banner .brand-crop {
+      max-width: min(55%, 500px);
+    }
+
+    body header.sohstx-banner .brand-crop img {
+      max-height: 100px;
+    }
+
+    #view-home .food-buttons button {
+      min-height: 84px;
+      padding: 14px 16px;
+      text-align: left;
+    }
+
+    html:has(#sizeSwitch[aria-pressed="true"]) #view-home .food-buttons button {
+      min-height: 96px;
+    }
+  }
+</style>
 </body>
 </html>
