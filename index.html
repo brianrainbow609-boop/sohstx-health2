@@ -558,4 +558,159 @@ window.addEventListener("load", () => {
   if (actions && tools) tools.prepend(actions);
 }, { once: true });
 </script>
+<style>
+  /* Carry the dark surface all the way to Android's navigation area. */
+  html {
+    min-height: 100%;
+    background: #0b1422;
+  }
+
+  body {
+    min-height: 100dvh;
+    background: #0b1422;
+  }
+
+  /* Compact app bar with room for the existing A / A+ control. */
+  header.sohstx-banner:has(#sizeSwitch) {
+    min-height: 56px;
+    padding: 6px 12px;
+    gap: 8px;
+    background: #071224;
+    border-bottom: 1px solid #24364b;
+  }
+
+  header.sohstx-banner .brand-crop {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 250px;
+    margin-right: auto;
+  }
+
+  header.sohstx-banner .brand-crop img {
+    display: block;
+    width: 100% !important;
+    height: 44px !important;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  @media (display-mode: standalone), (display-mode: fullscreen) {
+    header.sohstx-banner #brand-install {
+      display: none !important;
+    }
+  }
+
+  #view-home > #homeGlucoseTrend {
+    order: 3;
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 14px;
+    border: 1px solid #30465d;
+    border-radius: 16px;
+    background: #132237;
+    color: #eff6ff;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  #homeGlucoseTrend:focus-visible {
+    outline: 3px solid #67d6f5;
+    outline-offset: 3px;
+  }
+
+  #homeGlucoseTrend .trend-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
+
+  #homeGlucoseTrend .trend-link {
+    color: #83dbf6;
+    font-weight: 600;
+  }
+
+  #homeGlucoseTrend .homechart {
+    display: block;
+    width: 100%;
+    height: clamp(118px, 16dvh, 190px);
+    pointer-events: none;
+  }
+
+  #homeGlucoseTrend .trend-caption {
+    color: #c1d0df;
+    font-weight: 400;
+  }
+</style>
+
+<script>
+window.addEventListener("load", () => {
+  const home = document.getElementById("view-home");
+  const canvas = document.getElementById("homeChart");
+  const plot = canvas?.closest(".homechart");
+  const chartsTab = document.querySelector('.tabs [data-tab="charts"]');
+
+  if (!home || !plot || !chartsTab || document.getElementById("homeGlucoseTrend")) {
+    return;
+  }
+
+  const card = document.createElement("button");
+  card.type = "button";
+  card.id = "homeGlucoseTrend";
+  card.setAttribute("aria-label", "Open Charts and Analysis for the latest 24 hours");
+
+  const heading = document.createElement("span");
+  heading.className = "trend-heading";
+
+  const title = document.createElement("strong");
+  title.textContent = "24-hour glucose";
+
+  const link = document.createElement("span");
+  link.className = "trend-link";
+  link.textContent = "Analytics →";
+  heading.append(title, link);
+
+  const caption = document.createElement("small");
+  caption.className = "trend-caption";
+
+  function updateCaption() {
+    const latest = document.getElementById("latestTime")?.textContent.trim();
+    caption.textContent = latest && /\d/.test(latest)
+      ? "24 hours through " + latest.split(" · ")[0]
+      : "Import glucose readings to see your trend.";
+  }
+
+  // Move the existing chart so imports and tab changes still refresh it.
+  card.append(heading, plot, caption);
+  home.append(card);
+  updateCaption();
+
+  const timestamp = document.getElementById("latestTime");
+  if (timestamp) {
+    new MutationObserver(updateCaption).observe(timestamp, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+  }
+
+  card.addEventListener("click", () => {
+    chartsTab.click();
+    const range = document.getElementById("range");
+    if (range && Array.from(range.options).some(option => option.value === "24")) {
+      range.value = "24";
+      range.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    chartsTab.scrollIntoView({ block: "nearest" });
+  });
+
+  requestAnimationFrame(() => {
+    if (typeof drawAll === "function") drawAll();
+  });
+}, { once: true });
+</script>
 </body></html>
