@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071b29"><title>SohStx Pinball · Tempest</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#193945,#07131e 70%);color:#ebfffe;font:16px system-ui,sans-serif}main{width:min(100%,480px);height:100svh;margin:auto;padding:8px 12px;display:flex;flex-direction:column;gap:5px}header,.stats,.controls{display:flex;align-items:center;justify-content:space-between;gap:8px}h1{font:bold 24px Georgia;margin:0}button{font:700 16px system-ui;color:#e8fffa;border:1px solid #538b90;background:#183e48;border-radius:9px;cursor:pointer;touch-action:none;user-select:none}header button{padding:7px 12px}.stats{font:600 14px monospace;color:#a3e6de}canvas{width:100%;height:0;flex:1;object-fit:contain;touch-action:none}p{margin:0;text-align:center;font-size:14px;color:#c0dadc}.controls button{min-height:52px;flex:1}.controls #launch{background:#ffe298;color:#172b30}.controls button:disabled{opacity:.45}.controls button.held{background:#387d81}
+</style></head><body><main><header><h1>SohStx Pinball</h1><button id="pause">Pause</button></header><div class="stats"><span>Score <b id="score">0</b></span><span>Best <b id="best">0</b></span><span>Ball <b id="count">1/3</b></span></div><canvas width="360" height="560" aria-label="Tempest pinball playfield"></canvas><p id="message" role="status"></p><div class="controls"><button id="left">◀ Left</button><button id="launch">Launch</button><button id="right">Right ▶</button></div></main>
+<script>
+'use strict';
+const el=id=>document.getElementById(id), canvas=document.querySelector('canvas'), ctx=canvas.getContext('2d');
+const held=[false,false], angles=[.48,Math.PI-.48], pivots=[[100,471],[228,471]];
+const bumpers=[[105,184],[224,178],[165,266]], lit=new Set();
+const walls=[[15,425,15,99],[15,99,39,50],[39,50,97,23],[97,23,251,23],[251,23,309,43],[309,43,344,90],[344,90,344,531],[344,531,315,531],[315,531,315,126],[15,425,96,470],[315,414,232,470],[49,349,49,398],[49,398,87,427],[87,427,49,349],[280,348,280,397],[280,397,243,427],[243,427,280,348]];
+let ball,mode='ready',paused=false,points=0,number=1,bonus=0,record=0,flash=[0,0,0];
+try{record=Number(localStorage.getItem('sohstx-pinball-best'))||0}catch{}
+const targets=[[93,314],[119,322],[213,319]];
+const chute=[[65,283],[41,241],[37,162],[56,112],[100,96],[130,122]];
+let balls=[],drops=new Set(),popTime=0,spinner=0,notice='',noticeTime=0;
+function spawn(x,y,vx,vy){return {x,y,vx,vy,ride:-1,cool:0,spinCool:0}}
+function announce(text){notice=text;noticeTime=1.8;sync()}
+function ready(){balls=[spawn(330,517,0,0)];ball=balls[0];mode='ready';sync()}
+function sync(){el('score').textContent=points;el('best').textContent=record;el('count').textContent=number+'/3';el('launch').textContent=mode==='over'?'Play again':'Launch';el('launch').disabled=paused||mode==='play';el('pause').textContent=paused?'Resume':'Pause';el('pause').disabled=mode!=='play';el('message').textContent=paused?'Paused':mode==='over'?'Game over · '+points+' points':mode==='ready'?'Launch · Drop the gold seals to unlock the chute':noticeTime>0?notice:balls.length>1?'Veldora multiball · Shoot the spinner for jackpots':drops.size===3?'Chute open · Shoot the glowing blue mouth on the left':'Drop all 3 gold seals to open the left chute'}
+function launch(){if(paused||mode==='play')return;if(mode==='over'){number=1;points=0;lit.clear();bonus=0;ready()}mode='play';noticeTime=0;ball.vy=-960;sync()}
+function award(n){points+=n;if(points>record){record=points;try{localStorage.setItem('sohstx-pinball-best',record)}catch{}}sync()}
+function toggle(){if(mode==='play'){paused=!paused;release();sync()}}
+function hold(i,on){held[i]=on;el(i?'right':'left').classList.toggle('held',on)}
+function release(){hold(0,false);hold(1,false)}
+for(const [i,id] of ['left','right'].entries()){const b=el(id);b.onpointerdown=e=>{b.setPointerCapture(e.pointerId);hold(i,true)};b.onlostpointercapture=()=>hold(i,false)}
+el('launch').onclick=launch;el('pause').onclick=toggle;
+function key(e,on){if(['ArrowLeft','ArrowRight','Space','KeyP'].includes(e.code)){if(e.code==='Space'&&document.activeElement.tagName==='BUTTON')return;e.preventDefault();if(e.code.startsWith('Arrow'))hold(Number(e.code==='ArrowRight'),on);else if(on&&!e.repeat)(e.code==='Space'?launch:toggle)()}}
+onkeydown=e=>key(e,true);onkeyup=e=>key(e,false);onblur=()=>{release();if(mode==='play'&&!paused)toggle()};
+function contact(ball,ax,ay,bx,by,r,omega=0,bounce=.78){const dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((ball.x-ax)*dx+(ball.y-ay)*dy)/(dx*dx+dy*dy||1))),x=ax+t*dx,y=ay+t*dy;
+ const d=Math.hypot(ball.x-x,ball.y-y);if(d>=r||d<.0001)return false;
+ const nx=(ball.x-x)/d,ny=(ball.y-y)/d,v=(ball.vx+omega*(y-ay))*nx+(ball.vy-omega*(x-ax))*ny;
+ ball.x+=(r-d)*nx;ball.y+=(r-d)*ny;if(v>=0)return false;ball.vx-=(1+bounce)*v*nx;ball.vy-=(1+bounce)*v*ny;return true}
+function tip(i){return [pivots[i][0]+51*Math.cos(angles[i]),471+51*Math.sin(angles[i])]}
+function chutePosition(t){
+ const position=Math.min(t,1)*(chute.length-1),i=Math.min(Math.floor(position),chute.length-2);
+ const [x,y]=chute[i],[endX,endY]=chute[i+1],f=position-i;
+ return [x+(endX-x)*f,y+(endY-y)*f];
+}
+function updateBall(b,dt,swings){
+ if(b.ride>=0){
+  b.ride+=dt/.85;[b.x,b.y]=chutePosition(b.ride);
+  if(b.ride>=1){b.ride=-1;b.vx=185;b.vy=160;b.cool=.6;
+   if(balls.length===1){balls.push(spawn(267,101,-85,210));announce('VELDORA MULTIBALL · Spinner jackpot lit')}
+   else{award(1000);announce('Dragon chute · 1,000 points')}
+  }return;
+ }
+ b.cool=Math.max(0,b.cool-dt);b.spinCool=Math.max(0,b.spinCool-dt);
+ b.vy+=540*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;
+ if(drops.size===3 && !b.cool && Math.hypot(b.x-65,b.y-283)<19){
+  drops.clear();b.ride=0;award(600);announce('Dragon chute captured!');return;
+ }
+
+ // Spring-loaded faces on the two lower kickers.
+ for(const [i,w] of [walls[13],walls[16]].entries()){
+  if(!b.cool && contact(b,...w,11,0,.85)){
+   b.vx+=i?-140:140;b.vy-=170;b.cool=.24;award(50);
+  }
+ }
+ for(const w of walls)contact(b,...w,8);
+ targets.forEach(([x,y],i)=>{
+  if(!drops.has(i)&&contact(b,x-7,y,x+7,y,11)){
+   drops.add(i);award(150);announce(drops.size===3?'Seal bank cleared · Left chute open':'Seal down · '+drops.size+'/3');
+  }
+ });
+ if(popTime>0 && contact(b,255,252,255,252,20,0,1)){
+  popTime=0;b.vy-=160;award(750);announce('Mimic popped · 750 points');
+ }
+ if(!b.spinCool && Math.hypot((b.x-163)*.65,b.y-143)<12){
+  spinner=1;b.spinCool=.4;const jackpot=balls.length>1;award(jackpot?1200:75);
+  if(jackpot)announce('Spinner jackpot · 1,200 points');
+ }
+ bumpers.forEach(([x,y],i)=>{
+  if(!contact(b,x,y,x,y,32,0,.95))return;
+  const a=Math.atan2(b.y-y,b.x-x);b.vx+=145*Math.cos(a);b.vy+=145*Math.sin(a);
+  flash[i]=.24;if(!bonus)lit.add(i);award(bonus?200:100);popTime=6;
+  if(lit.size===3&&!bonus){bonus=10;award(500);announce('Tempest surge · Double bumper points')}
+ });
+ for(let i=0;i<2;i++)contact(b,...pivots[i],...tip(i),14,swings[i]);
+ const speed=Math.hypot(b.vx,b.vy);if(speed>1050){b.vx*=1050/speed;b.vy*=1050/speed}
+}
+function step(dt){
+ if(paused)return;
+ const swings=angles.map((angle,i)=>{
+  const target=held[i]?-.58:.48,goal=i?Math.PI-target:target;
+  const delta=Math.max(-18*dt,Math.min(18*dt,goal-angle));angles[i]+=delta;return delta/dt;
+ });
+ if(mode!=='play')return;
+ if(noticeTime>0){noticeTime-=dt;if(noticeTime<=0)sync()}
+ flash=flash.map(t=>Math.max(0,t-dt));popTime=Math.max(0,popTime-dt);spinner=Math.max(0,spinner-dt);
+ if(bonus>0){bonus=Math.max(0,bonus-dt);if(!bonus){lit.clear();sync()}}
+ for(const b of balls.slice())updateBall(b,dt,swings);
+ const remaining=balls.filter(b=>b.y<=570);
+ if(remaining.length===balls.length)return;
+ balls=remaining;
+ if(balls.length){announce('One ball remaining');return}
+ release();bonus=0;lit.clear();drops.clear();popTime=spinner=noticeTime=0;
+ if(number===3){mode='over';sync()}else{number++;ready()}
+}
+function line(x,y,X,Y,color,width){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(X,Y);ctx.stroke()}
+function oval(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill()}
+function label(s,x,y,size,color){ctx.fillStyle=color;ctx.font='bold '+size+'px Georgia';ctx.textAlign='center';ctx.fillText(s,x,y)}
+function draw(){const bg=ctx.createLinearGradient(0,0,0,560);bg.addColorStop(0,'#103a50');bg.addColorStop(.56,bonus?'#563357':'#19434a');bg.addColorStop(1,'#0a1c32');ctx.fillStyle=bg;ctx.fillRect(0,0,360,560);ctx.lineCap='round';
+ for(let i=0;i<65;i++)oval(18+(i*73)%314,26+(i*97)%490,i%4===0?1.6:.8,1,'#8fc2ba');
+ ctx.strokeStyle='#41777b';ctx.lineWidth=1;for(const r of [76,83,91]){ctx.beginPath();ctx.arc(164,236,r,0,Math.PI*2);ctx.stroke()}
+ label('TEMPEST',169,77,30,'#ffe3a0');label('Dragon Vault',169,99,15,'#a6ded9');
+ for(const w of walls){line(...w,'#173039',9);line(...w,'#7dbbb5',3)}
+ const open=drops.size===3;
+ for(let i=1;i<chute.length;i++){
+  const seg=[...chute[i-1],...chute[i]];line(...seg,'#548390',13);line(...seg,open?'#43d2dc':'#214753',9);
+ }
+ oval(65,283,16,12,open?'#9efff8':'#70989f');oval(65,283,11,8,'#092233');
+ label('CHUTE',60,306,10,open?'#b4fff3':'#a0c6c0');
+ targets.forEach(([x,y],i)=>{line(x-7,y,x+7,y,drops.has(i)?'#47645f':'#ffc76e',7);
+  if(!drops.has(i))line(x-6,y-2,x+6,y-2,'#fff0ba',2)});
+ line(144,143,182,143,'#abc3c5',2);oval(163,143,14,2+5*Math.abs(Math.cos(spinner*36)),balls.length>1?'#ffcb68':'#ac9bdf');
+ oval(255,253,15,8,'#0b2435');
+ if(popTime>0){oval(255,251,12,12,'#e783a8');label('✦',255,255,13,'#fff4c2')}
+ for(const w of [walls[13],walls[16]])line(...w,'#fb997a',4);
+ bumpers.forEach(([x,y],i)=>{oval(x,y,29,29,flash[i]?'#fffadd':lit.has(i)?'#e9bc65':'#3c8294');const g=ctx.createRadialGradient(x-8,y-12,2,x,y,26);g.addColorStop(0,'#caffff');g.addColorStop(.5,'#70dfef');g.addColorStop(1,'#339abb');oval(x,y+1,24,21,g);line(x-11,y,x-5,y+2,'#25465a',2);line(x+5,y+2,x+11,y,'#25465a',2)});
+ label(balls.length>1?'DRAGON JACKPOT':bonus?'VELDORA':'GREAT SAGE',163,355,19,bonus?'#ffd17a':'#a2c7bf');label(bonus?Math.ceil(bonus)+' s':'✦',163,376,15,'#dfc589');
+ for(let i=0;i<2;i++){line(...pivots[i],...tip(i),'#633e36',15);line(...pivots[i],...tip(i),'#ffcf77',11)}
+ for(const ball of balls){const g=ctx.createRadialGradient(ball.x-3,ball.y-4,1,ball.x,ball.y,8);g.addColorStop(0,'white');g.addColorStop(.55,'#caddeb');g.addColorStop(1,'#5b7597');oval(ball.x,ball.y,8,8,g)}
+ if(paused||mode==='over'){ctx.fillStyle='#071727ba';ctx.fillRect(0,210,360,89);label(paused?'Paused':'Game over',180,263,32,'#fff0c9')}}
+let last=0,acc=0;function frame(t){acc+=Math.min((t-last)/1000,.04);last=t;while(acc>=1/240){step(1/240);acc-=1/240}draw();requestAnimationFrame(frame)}ready();requestAnimationFrame(frame)
+</script></body></html>
