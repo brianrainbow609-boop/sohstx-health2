@@ -60,10 +60,15 @@
     const series=rows.filter(r=>group(r)===select.value).sort((a,b)=>b.date.localeCompare(a.date));
     const body=panel.querySelector('tbody');body.replaceChildren();
     for(const r of series){const tr=body.insertRow();for(const v of [r.date,r.result,r.reference_range || '—',r.date_basis || '—'])tr.insertCell().textContent=v;}
-    const latest=series[0], prior=series.find(r=>r.date<latest.date);
+    const latest=series[0];
+    const prior=latest ? series.find(r=>r.date<latest.date) : null;
     let msg=latest?'Latest: '+latest.result+' '+latest.unit:'Import your lab history to see results here.';
     if(prior)msg+=' · Previous: '+prior.result+' '+prior.unit+' on '+prior.date;
     panel.querySelector('.lab-change').textContent=msg;
+    if(!latest){
+      panel.querySelector('.lab-count').textContent='0 results · 0 dates';
+      return;
+    }
   }
   select.onchange=render;
   const load=panel.querySelector('.lab-import');load.textContent=clinical?'Import shared labs':'Import monthly CSV';load.onclick=()=>file.click();file.accept=clinical?'.json':'.csv';
