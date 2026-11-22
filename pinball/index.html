@@ -14,8 +14,9 @@ let ball,mode='ready',paused=false,points=0,number=1,bonus=0,record=0,flash=[0,0
 try{record=Number(localStorage.getItem('sohstx-pinball-best'))||0}catch{}
 const targets=[[93,314],[119,322],[213,319]];
 const chute=[[65,283],[41,241],[37,162],[56,112],[100,96],[130,122]];
-let balls=[],drops=new Set(),popTime=0,spinner=0,notice='',noticeTime=0;
-function spawn(x,y,vx,vy){return {x,y,vx,vy,ride:-1,cool:0,spinCool:0}}
+let balls=[],drops=new Set(),sparks=[],popTime=0,spinner=0,notice='',noticeTime=0;
+function burst(x,y,color,count=10){for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,s=45+Math.random()*180;sparks.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-35,life:.28+Math.random()*.32,max:.6,color,size:1.5+Math.random()*2.5})}}
+function spawn(x,y,vx,vy){return {x,y,vx,vy,ride:-1,cool:0,spinCool:0,trail:[]}}
 function announce(text){notice=text;noticeTime=1.8;sync()}
 function ready(){balls=[spawn(330,517,0,0)];ball=balls[0];mode='ready';sync()}
 function sync(){el('score').textContent=points;el('best').textContent=record;el('count').textContent=number+'/3';el('launch').textContent=mode==='over'?'Play again':'Launch';el('launch').disabled=paused||mode==='play';el('pause').textContent=paused?'Resume':'Pause';el('pause').disabled=mode!=='play';el('message').textContent=paused?'Paused':mode==='over'?'Game over · '+points+' points':mode==='ready'?'Launch · Drop the gold seals to unlock the chute':noticeTime>0?notice:balls.length>1?'Veldora multiball · Shoot the spinner for jackpots':drops.size===3?'Chute open · Shoot the glowing blue mouth on the left':'Drop all 3 gold seals to open the left chute'}
@@ -55,13 +56,13 @@ function updateBall(b,dt,swings){
  // Spring-loaded faces on the two lower kickers.
  for(const [i,w] of [walls[13],walls[16]].entries()){
   if(!b.cool && contact(b,...w,11,0,.85)){
-   b.vx+=i?-140:140;b.vy-=170;b.cool=.24;award(50);
+   b.vx+=i?-140:140;b.vy-=170;b.cool=.24;burst(b.x,b.y,'#ff9b7d',7);award(50);
   }
  }
  for(const w of walls)contact(b,...w,8);
  targets.forEach(([x,y],i)=>{
   if(!drops.has(i)&&contact(b,x-7,y,x+7,y,11)){
-   drops.add(i);award(150);announce(drops.size===3?'Seal bank cleared · Left chute open':'Seal down · '+drops.size+'/3');
+   drops.add(i);burst(x,y,'#ffe59a',12);award(150);announce(drops.size===3?'Seal bank cleared · Left chute open':'Seal down · '+drops.size+'/3');
   }
  });
  if(popTime>0 && contact(b,255,252,255,252,20,0,1)){
@@ -74,7 +75,7 @@ function updateBall(b,dt,swings){
  bumpers.forEach(([x,y],i)=>{
   if(!contact(b,x,y,x,y,32,0,.95))return;
   const a=Math.atan2(b.y-y,b.x-x);b.vx+=145*Math.cos(a);b.vy+=145*Math.sin(a);
-  flash[i]=.24;if(!bonus)lit.add(i);award(bonus?200:100);popTime=6;
+  flash[i]=.24;burst(x,y,bonus?'#ffe07a':'#7ef7ff',18);if(!bonus)lit.add(i);award(bonus?200:100);popTime=6;
   if(lit.size===3&&!bonus){bonus=10;award(500);announce('Tempest surge · Double bumper points')}
  });
  for(let i=0;i<2;i++)contact(b,...pivots[i],...tip(i),14,swings[i]);
@@ -89,6 +90,7 @@ function step(dt){
  if(mode!=='play')return;
  if(noticeTime>0){noticeTime-=dt;if(noticeTime<=0)sync()}
  flash=flash.map(t=>Math.max(0,t-dt));popTime=Math.max(0,popTime-dt);spinner=Math.max(0,spinner-dt);
+  sparks=sparks.filter(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt;p.life-=dt;return p.life>0});
  if(bonus>0){bonus=Math.max(0,bonus-dt);if(!bonus){lit.clear();sync()}}
  for(const b of balls.slice())updateBall(b,dt,swings);
  const remaining=balls.filter(b=>b.y<=570);
@@ -105,7 +107,7 @@ function draw(){const bg=ctx.createLinearGradient(0,0,0,560);bg.addColorStop(0,'
  for(let i=0;i<65;i++)oval(18+(i*73)%314,26+(i*97)%490,i%4===0?1.6:.8,1,'#8fc2ba');
  ctx.strokeStyle='#41777b';ctx.lineWidth=1;for(const r of [76,83,91]){ctx.beginPath();ctx.arc(164,236,r,0,Math.PI*2);ctx.stroke()}
  label('TEMPEST',169,77,30,'#ffe3a0');label('Dragon Vault',169,99,15,'#a6ded9');
- for(const w of walls){line(...w,'#173039',9);line(...w,'#7dbbb5',3)}
+ for(const w of walls){line(...w,'#071522',12);line(...w,'#4de0db',5);line(...w,'#d5fff4',1.25)}
  const open=drops.size===3;
  for(let i=1;i<chute.length;i++){
   const seg=[...chute[i-1],...chute[i]];line(...seg,'#548390',13);line(...seg,open?'#43d2dc':'#214753',9);
@@ -121,7 +123,8 @@ function draw(){const bg=ctx.createLinearGradient(0,0,0,560);bg.addColorStop(0,'
  bumpers.forEach(([x,y],i)=>{oval(x,y,29,29,flash[i]?'#fffadd':lit.has(i)?'#e9bc65':'#3c8294');const g=ctx.createRadialGradient(x-8,y-12,2,x,y,26);g.addColorStop(0,'#caffff');g.addColorStop(.5,'#70dfef');g.addColorStop(1,'#339abb');oval(x,y+1,24,21,g);line(x-11,y,x-5,y+2,'#25465a',2);line(x+5,y+2,x+11,y,'#25465a',2)});
  label(balls.length>1?'DRAGON JACKPOT':bonus?'VELDORA':'GREAT SAGE',163,355,19,bonus?'#ffd17a':'#a2c7bf');label(bonus?Math.ceil(bonus)+' s':'✦',163,376,15,'#dfc589');
  for(let i=0;i<2;i++){line(...pivots[i],...tip(i),'#633e36',15);line(...pivots[i],...tip(i),'#ffcf77',11)}
- for(const ball of balls){const g=ctx.createRadialGradient(ball.x-3,ball.y-4,1,ball.x,ball.y,8);g.addColorStop(0,'white');g.addColorStop(.55,'#caddeb');g.addColorStop(1,'#5b7597');oval(ball.x,ball.y,8,8,g)}
+ for(const ball of balls){ball.trail.push({x:ball.x,y:ball.y});if(ball.trail.length>18)ball.trail.shift();for(let i=1;i<ball.trail.length;i++){const a=ball.trail[i-1],b=ball.trail[i],fade=i/ball.trail.length;ctx.globalAlpha=fade*.42;line(a.x,a.y,b.x,b.y,balls.length>1?'#ffd578':'#8cfff4',1+fade*5)}ctx.globalAlpha=1;const g=ctx.createRadialGradient(ball.x-3,ball.y-4,1,ball.x,ball.y,10);g.addColorStop(0,'#fff');g.addColorStop(.42,'#d6ffff');g.addColorStop(1,'#52cfff');ctx.save();ctx.shadowBlur=17;ctx.shadowColor='#7ffaff';oval(ball.x,ball.y,8,8,g);ctx.restore()}
+for(const p of sparks){ctx.globalAlpha=Math.max(0,p.life/p.max);oval(p.x,p.y,p.size,p.size,p.color)}ctx.globalAlpha=1;
  if(paused||mode==='over'){ctx.fillStyle='#071727ba';ctx.fillRect(0,210,360,89);label(paused?'Paused':'Game over',180,263,32,'#fff0c9')}}
 let last=0,acc=0;function frame(t){acc+=Math.min((t-last)/1000,.04);last=t;while(acc>=1/240){step(1/240);acc-=1/240}draw();requestAnimationFrame(frame)}ready();requestAnimationFrame(frame)
 </script></body></html>
