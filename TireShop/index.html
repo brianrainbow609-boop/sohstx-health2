@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#171a17"><link rel="manifest" href="/TireShop/manifest.webmanifest"><title>SohStx Tire Shop · Retread Rampage</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101310;color:#f3efdd;font:15px system-ui,sans-serif;touch-action:none;user-select:none}main{height:100svh;max-width:560px;margin:auto;display:flex;flex-direction:column;padding:8px;gap:6px}header,.hud,.bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}h1{font:700 19px Georgia;margin:0;color:#f5c66a}.hud{font:700 13px monospace;color:#b9d5a2}.screen{flex:1;min-height:100px;background:#151812;border:2px solid #4b4e3d;position:relative;overflow:hidden}canvas{width:100%;height:100%;display:block;image-rendering:pixelated}.message{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:#111a;color:#ffdfa0;font:bold 20px Georgia;line-height:1.5;padding:28px}.message small{display:block;font:14px system-ui;color:#e2e1cc}button{border:2px solid #6e7158;background:#303629;color:#fff5da;border-radius:9px;font:700 14px system-ui;touch-action:none;min-height:46px}button:active,button.held{background:#887346}.bottom{justify-content:center}.pad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,46px);gap:3px;touch-action:none}.pad button{font-size:20px}.pad .up{grid-column:2}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:2}.pad .right{grid-column:3;grid-row:2}.actions{display:grid;grid-template-columns:repeat(2,minmax(75px,1fr));gap:5px;flex:1}.actions button{min-height:49px;font-size:12px}.attack{background:#5a4527}.sub{font-size:11px;color:#b3b69d;text-align:center}
+</style></head><body><main><header><h1>RETREAD RAMPAGE</h1><button id="restart">Restart</button></header><div class="hud"><span>HEALTH <b id="health">100</b></span><span>TOOLS <b id="tool">Impact</b></span><span>TIRES <b id="kills">0/5</b></span></div><div class="screen"><canvas width="320" height="200" aria-label="First person tire shop maze"></canvas><div class="message" id="message">AFTER HOURS<br>RETREAD RAMPAGE<small>Clear the shop of five rogue tires.<br>Tap to clock in.</small></div></div><div class="bottom"><div class="pad"><button class="up" data-move="forward">▲</button><button class="left" data-move="left">◀</button><button class="down" data-move="back">▼</button><button class="right" data-move="right">▶</button></div><div class="actions"><button id="swap">Change tool<br><small>Impact / Tire Iron</small></button><button class="attack" id="use">Use tool<br><small>Tap / Space</small></button></div></div><div class="sub">Hold arrows to move · Tap screen to turn · Clear five tire monsters</div></main>
+<script>
+'use strict';
+const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),W=320,H=200;
+const map=[
+'############',
+'#..........#',
+'#..##......#',
+'#..........#',
+'#....#.....#',
+'#....#..##.#',
+'#..........#',
+'#..##......#',
+'#..........#',
+'#......##..#',
+'#..........#',
+'############'];
+const player={x:2.5,y:2.5,a:0,hp:100};
+let monsters=[],held=new Set(),playing=false,score=0,tool=0,last=0,attackFlash=0,damageFlash=0,turnTouch=null;
+const el=id=>document.getElementById(id);
+function spawn(){monsters=[{x:8.5,y:2.5,hp:2},{x:5.5,y:6.5,hp:2},{x:9.5,y:8.5,hp:2},{x:2.5,y:9.5,hp:2},{x:7.5,y:10.5,hp:2}];}
+function start(){player.x=2.5;player.y=2.5;player.a=0;player.hp=100;score=0;tool=0;spawn();playing=true;el('message').hidden=true;sync()}
+function sync(){el('health').textContent=player.hp;el('tool').textContent=tool?'Tire iron':'Impact';el('kills').textContent=score+'/5';}
+function solid(x,y){const ix=Math.floor(x),iy=Math.floor(y);return iy<0||iy>=map.length||ix<0||ix>=map[0].length||map[iy][ix]==='#'}
+function clearRay(a,max){const dx=Math.cos(a)*.04,dy=Math.sin(a)*.04;let x=player.x,y=player.y,d=0;while(d<max){x+=dx;y+=dy;d+=.04;if(solid(x,y))return d}return max}
+function useTool(){if(!playing)return;attackFlash=.22;const reach=tool?1.2:2.8,arc=tool?.75:.33;let target=null,best=reach;
+ for(const m of monsters){const dx=m.x-player.x,dy=m.y-player.y,d=Math.hypot(dx,dy);let delta=Math.atan2(Math.sin(Math.atan2(dy,dx)-player.a),Math.cos(Math.atan2(dy,dx)-player.a));if(d<best&&Math.abs(delta)<arc&&clearRay(player.a+delta,d+.1)>=d-.05){target=m;best=d}}
+ if(target){target.hp--;if(!target.hp){monsters=monsters.filter(m=>m!==target);score++;if(!monsters.length){playing=false;el('message').innerHTML='SHOP CLEARED<small>Five tires retreaded. Tap to run it again.</small>';el('message').hidden=false}}}
+ else if(!tool){for(const m of monsters){const d=Math.hypot(m.x-player.x,m.y-player.y);if(d<3.4){m.stun=.8}}}
+ sync()}
+function swap(){tool=1-tool;sync()}
+el('swap').onclick=swap;el('use').onclick=useTool;el('restart').onclick=start;el('message').onclick=start;
+canvas.addEventListener('pointerdown',e=>{if(!playing){start();return}turnTouch={x:e.clientX}});
+canvas.addEventListener('pointermove',e=>{if(turnTouch){player.a+=(e.clientX-turnTouch.x)*.008;turnTouch.x=e.clientX}});
+canvas.addEventListener('pointerup',()=>turnTouch=null);canvas.addEventListener('pointercancel',()=>turnTouch=null);
+document.querySelectorAll('[data-move]').forEach(b=>{const k=b.dataset.move;b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);held.add(k);b.classList.add('held')};b.onpointerup=b.onlostpointercapture=()=>{held.delete(k);b.classList.remove('held')}});
+onkeydown=e=>{const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowleft','arrowdown','arrowright',' ','e'].includes(k))e.preventDefault();if(k==='w'||k==='arrowup')held.add('forward');if(k==='s'||k==='arrowdown')held.add('back');if(k==='a'||k==='arrowleft')held.add('left');if(k==='d'||k==='arrowright')held.add('right');if(k===' ')useTool();if(k==='e')swap()};
+onkeyup=e=>{const k=e.key.toLowerCase();if(k==='w'||k==='arrowup')held.delete('forward');if(k==='s'||k==='arrowdown')held.delete('back');if(k==='a'||k==='arrowleft')held.delete('left');if(k==='d'||k==='arrowright')held.delete('right')};
+function move(dt){if(!playing)return;const speed=2.1*dt,rot=2.4*dt;if(held.has('left'))player.a-=rot;if(held.has('right'))player.a+=rot;let f=(held.has('forward')?1:0)-(held.has('back')?1:0);if(f){const nx=player.x+Math.cos(player.a)*speed*f,ny=player.y+Math.sin(player.a)*speed*f;if(!solid(nx,player.y))player.x=nx;if(!solid(player.x,ny))player.y=ny}
+ for(const m of monsters){if(m.stun>0){m.stun-=dt;continue}const dx=player.x-m.x,dy=player.y-m.y,d=Math.hypot(dx,dy);if(d>0.72){const step=Math.min(.72*dt,d-.72),nx=m.x+dx/d*step,ny=m.y+dy/d*step;if(!solid(nx,m.y))m.x=nx;if(!solid(m.x,ny))m.y=ny}else if(Math.random()<dt*.8){player.hp-=8;damageFlash=.28;sync();if(player.hp<=0){playing=false;el('message').innerHTML='SHIFT OVER<small>The tires took the shop. Tap to clock in again.</small>';el('message').hidden=false}}}
+}
+function render(){const sky=ctx.createLinearGradient(0,0,0,100);sky.addColorStop(0,'#293c42');sky.addColorStop(1,'#b58c58');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H/2);const floor=ctx.createLinearGradient(0,100,0,H);floor.addColorStop(0,'#514c3b');floor.addColorStop(1,'#131914');ctx.fillStyle=floor;ctx.fillRect(0,H/2,W,H/2);
+ for(let x=0;x<W;x++){const a=player.a+(x/W-.5)*1.12,d=clearRay(a,14),wallH=Math.min(H,Math.floor(H/(d*Math.cos(a-player.a)))),top=(H-wallH)/2;const hitX=player.x+Math.cos(a)*d,hitY=player.y+Math.sin(a)*d;let shade=Math.max(.25,1-d/12);if(Math.abs(hitX-Math.round(hitX))<.03)shade*=.72;ctx.fillStyle=`rgb(${Math.floor(106*shade)},${Math.floor(92*shade)},${Math.floor(67*shade)})`;ctx.fillRect(x,top,1,wallH);if(wallH>20){ctx.fillStyle='rgba(32,30,23,.65)';ctx.fillRect(x,top+wallH*.22,1,2);ctx.fillRect(x,top+wallH*.69,1,2)}}
+ const sorted=monsters.map(m=>({...m,d:Math.hypot(m.x-player.x,m.y-player.y),a:Math.atan2(m.y-player.y,m.x-player.x)})).sort((a,b)=>b.d-a.d);
+ for(const m of sorted){let delta=Math.atan2(Math.sin(m.a-player.a),Math.cos(m.a-player.a));if(Math.abs(delta)>.8||clearRay(m.a,m.d)<m.d-.2)continue;const sx=W/2+delta/1.12*W,sz=Math.min(94,H/m.d*.55),sy=H/2+H/(m.d*1.5);ctx.save();ctx.translate(sx,sy);ctx.scale(sz/54,sz/54);ctx.fillStyle='#090a09';ctx.beginPath();ctx.ellipse(0,0,26,31,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#707064';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(0,0,20,25,0,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#cf5a32';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-11,-4);ctx.lineTo(-5,-1);ctx.moveTo(11,-4);ctx.lineTo(5,-1);ctx.stroke();ctx.fillStyle='#ffe49a';ctx.fillRect(-8,7,16,4);ctx.fillStyle='#b8482b';ctx.fillRect(-5,7,10,2);ctx.restore()}
+ // Center tool reticle and impact flash.
+ ctx.fillStyle=attackFlash>0?'#ffd477':'#d8d2ad';ctx.fillRect(W/2-1,96,3,9);ctx.fillRect(W/2-5,99,11,2);
+ if(attackFlash>0){ctx.fillStyle='rgba(255,194,83,.22)';ctx.fillRect(130,75,60,65);attackFlash-=.016}
+ if(damageFlash>0){ctx.fillStyle='rgba(180,20,10,.26)';ctx.fillRect(0,0,W,H);damageFlash-=.016}
+}
+function frame(t){const dt=Math.min((t-last)/1000,.05);last=t;move(dt);render();requestAnimationFrame(frame)}sync();requestAnimationFrame(frame);
+</script><script src="/game-install.js" defer></script><script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/TireShop/sw.js',{scope:'/TireShop/'}).catch(()=>{});</script></body></html>
