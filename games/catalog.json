@@ -25,7 +25,7 @@
     "title": "Retread Rampage",
     "genre": "First-person shooter",
     "art": "rampage",
-    "description": "Clear the bays of rogue tire monsters with your tire iron and impact wrench in this Doom 95\u2013style shooter."
+    "description": "Clear the bays of rogue tire monsters with your tire iron and impact wrench in this Doom 95–style shooter."
   },
   {
     "dir": "night-shift",
@@ -33,5 +33,12 @@
     "genre": "Run and gun",
     "art": "night",
     "description": "Jump the service pits, fight your way through the shop, and take on Big Lug."
+  },
+  {
+    "dir": "tire-shots-rival",
+    "title": "Tire Shots Rival",
+    "genre": "Boxing upgrade simulator",
+    "art": "island",
+    "description": "Pick Hector, Erasmo, or another fighter. Throw punches, win rounds, and upgrade strength, speed and accuracy."
   }
 ]
