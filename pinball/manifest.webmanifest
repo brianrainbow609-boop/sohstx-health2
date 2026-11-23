@@ -1,5 +1,5 @@
 {
-  "name": "SohStx Pinball · Dragon Vault",
+  "name": "SohStx Pinball \u00b7 Dragon Vault",
   "short_name": "SohStx Pinball",
   "description": "Tempest Dragon Vault pinball game",
   "start_url": "/pinball/",
@@ -9,16 +9,14 @@
   "theme_color": "#103a50",
   "icons": [
     {
-      "src": "/brand-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
-      "src": "/brand-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }
