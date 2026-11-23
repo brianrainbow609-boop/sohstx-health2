@@ -1,9 +1,9 @@
 {
-  "name": "That Time I Got Reincarnated as Robert",
-  "short_name": "Robert",
+  "name": "That Time I Got Reincarnated as Bobert",
+  "short_name": "Bobert",
   "description": "SohStx game",
-  "start_url": "/Robert/",
-  "scope": "/Robert/",
+  "start_url": "/Bobert/",
+  "scope": "/Bobert/",
   "display": "standalone",
   "background_color": "#10191b",
   "theme_color": "#10191b",
