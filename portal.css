@@ -19,3 +19,35 @@
 .home-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:70px;border-top:1px solid #ffffff26;padding:30px 0 40px;color:#91a9b6;font-size:.8rem}.home-footer a{text-decoration:none}
 @media(max-width:700px){.home .site-nav{min-height:72px;align-items:flex-start;padding-top:18px;gap:12px}.home .nav-links{gap:12px;flex-wrap:wrap;justify-content:flex-end}.home .nav-links a{font-size:.73rem}.hero-home{padding-top:75px;min-height:auto}.hero-home h1{font-size:clamp(3.2rem,12vw,5rem)}.hero-foot{margin-top:65px}.section-title{align-items:start;flex-direction:column}.feature-grid,.mini-grid{grid-template-columns:1fr}.feature{min-height:420px}.feature-image{height:220px}.projects,.secondary-projects{padding-top:52px}.home-footer{flex-wrap:wrap}.home-footer .mark{width:100%}}
 @media(prefers-reduced-motion:reduce){.home *, .home *:before,.home *:after{scroll-behavior:auto!important;transition:none!important}}
+
+/* Homepage refinement: quieter scale and more comfortable density */
+.home .site-nav{min-height:72px}
+.home .mark{font-size:1.65rem}
+.home .nav-links{gap:23px}
+.hero-home{min-height:470px;padding-top:78px}
+.hero-home h1{font-size:clamp(3.1rem,6.3vw,5.8rem);line-height:1.02;letter-spacing:-.072em}
+.hero-lede{font-size:clamp(.98rem,1.25vw,1.08rem);max-width:510px;margin:23px 0 25px}
+.hero-glow{opacity:.56}
+.hero-foot{margin-top:62px}
+.projects,.secondary-projects{padding-top:48px}
+.section-title h2{font-size:clamp(2rem,3.8vw,3rem)}
+.section-title{margin-bottom:24px}
+.feature{min-height:390px;border-radius:16px}
+.feature-image{height:205px}
+.feature-copy{padding:4px 25px 25px}
+.feature-copy h3{font-size:clamp(1.55rem,2.4vw,2rem)}
+.feature-copy p,.mini-card p{font-size:.89rem}
+.mini-card{min-height:225px;padding:23px}
+.mini-card h3{font-size:1.28rem}
+.mini-icon{font-size:1.65rem;margin-bottom:13px}
+.home-footer{margin-top:48px}
+@media(max-width:700px){
+ .home .site-nav{min-height:66px}
+ .hero-home{padding-top:54px;min-height:auto}
+ .hero-home h1{font-size:clamp(2.85rem,10vw,4.3rem)}
+ .hero-foot{margin-top:45px}
+ .projects,.secondary-projects{padding-top:42px}
+ .feature{min-height:360px}
+ .feature-image{height:185px}
+ .mini-card{min-height:205px}
+}
