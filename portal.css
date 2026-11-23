@@ -52,15 +52,35 @@
  .mini-card{min-height:205px}
 }
 
-/* Atmospheric background upgrade — no external images or heavy animation */
-.home{background-color:#080e17;background-image:radial-gradient(ellipse 65% 40% at 82% 5%,rgba(39,110,130,.24),transparent 75%),radial-gradient(ellipse 55% 35% at 8% 42%,rgba(34,65,103,.16),transparent 75%),radial-gradient(ellipse 55% 40% at 88% 84%,rgba(26,95,83,.13),transparent 75%),linear-gradient(165deg,#0b1421 0%,#090f19 48%,#0d1822 100%);background-attachment:scroll}
-.home:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.16;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cpath d='M0 139.5H140M139.5 0V140' stroke='%238ca7bb' stroke-opacity='.22' fill='none'/%3E%3C/svg%3E");background-size:140px 140px;mask-image:linear-gradient(115deg,transparent 5%,#000 60%,transparent 100%)}
+
+/* Concept B — industrial editorial: crisp geometry, no haze, no glow */
+.home{background:#101417;background-image:none;color:#f2f0e9}
+.home:before{content:none}
 .home .site-nav,.home main{position:relative;z-index:1}
-.hero-home{background:radial-gradient(ellipse 50% 60% at 79% 41%,rgba(70,153,166,.075),transparent 70%)}
-.hero-glow{inset:-90px -17% -25px 38%;opacity:.72;background:radial-gradient(ellipse at 57% 42%,rgba(50,129,145,.27) 0,rgba(32,68,111,.15) 30%,transparent 70%);filter:blur(48px)}
-.hero-home:after{background-image:linear-gradient(rgba(158,211,220,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(158,211,220,.035) 1px,transparent 1px);background-size:68px 68px;mask-image:linear-gradient(to left,#000 0,transparent 82%)}
-.home .projects,.home .secondary-projects{position:relative}
-.home .projects:before{content:"";position:absolute;pointer-events:none;z-index:-1;inset:5% -10% 5% 55%;background:radial-gradient(ellipse,rgba(35,103,114,.12),transparent 70%);filter:blur(50px)}
-.home .feature{box-shadow:0 14px 45px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.04)}
-.home .mini-card{box-shadow:0 12px 35px rgba(0,0,0,.12)}
-@media(max-width:700px){.home:before{opacity:.09}.hero-glow{filter:blur(34px);opacity:.55}}
+.home .site-nav{border-color:#ffffff26}
+.home .mark b,.mark-dot,.period{color:#d5aa65}
+.home .nav-links a:hover{color:#f2d09a}
+.hero-home{isolation:isolate;background:#151b1e;border:1px solid #ffffff18;border-radius:16px;padding:72px 45px 0;margin-top:28px;min-height:440px;overflow:hidden}
+.hero-glow{display:none}
+.hero-home:before{content:"S / S";position:absolute;z-index:-1;top:-110px;right:-35px;font:900 clamp(12rem,31vw,30rem)/1 system-ui,sans-serif;letter-spacing:-.13em;white-space:nowrap;color:transparent;-webkit-text-stroke:1px rgba(232,219,190,.15);transform:rotate(-12deg);pointer-events:none}
+.hero-home:after{content:"";position:absolute;z-index:-1;inset:0 0 0 54%;background:repeating-linear-gradient(135deg,transparent 0,transparent 72px,rgba(229,193,127,.07) 73px,transparent 74px);mask-image:linear-gradient(to right,transparent,#000);pointer-events:none}
+.home .eyebrow{color:#d8b87f}.signal{background:#d8b87f;box-shadow:none}
+.hero-home h1{font-size:clamp(3.1rem,6.3vw,5.8rem);color:#f7f2e7}
+.hero-home h1 em{background:none;color:#e2b979}
+.hero-lede{color:#b5b9b4}
+.home .action{background:#e4bd82;color:#161a1c;box-shadow:none}
+.home .action:hover{box-shadow:none}
+.home .action.ghost{background:transparent;border-color:#ffffff40}
+.hero-foot{margin-top:60px;border-color:#ffffff2b;color:#9c9e96}
+.projects,.secondary-projects{background:none}
+.home .projects:before{content:none}
+.feature,.mini-card{box-shadow:none!important}
+.home .feature{background:#1b2427;border-color:#ffffff2b}
+.home .feature:hover,.home .mini-card[href]:hover{border-color:#e2b979}
+.feature-image:after{background:linear-gradient(transparent 55%,#1b2427)}
+.feature-tag,.mini-label,.feature-link,.mini-icon{color:#e0b87c}
+.home .mini-card{background:#1b2225;border-color:#ffffff27}
+.home .muted-card{background:#171c1f}
+.home .section-title h2{color:#f2f0e9}
+.home .home-footer{border-color:#ffffff2b}
+@media(max-width:700px){.hero-home{margin-top:16px;padding:55px 22px 0;min-height:auto}.hero-home:before{font-size:14rem;top:5px;right:-70px;opacity:.65}.hero-home:after{inset:0 0 0 35%}.hero-foot{margin-top:45px}}
