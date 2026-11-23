@@ -184,7 +184,7 @@ header.sohstx-banner{display:flex;flex-direction:row;align-items:center;justify-
     }
   }
 </style>
-</head><body>
+<link rel="stylesheet" href="/sohstx-brand.css"></head><body><div class="sohstx-appidentity" style="background:#050a10;color:#cde7f1;border-bottom:1px solid #2d596c;padding:6px 14px;text-align:center;font:700 11px/1.4 ui-monospace,monospace;letter-spacing:.12em"><a href="/" style="color:#2bd2ff;text-decoration:none">SOH // STX</a> &nbsp; · &nbsp; BALANCE // BUILD // BREAK LIMITS &nbsp; · &nbsp; <a href="/" style="color:#2bd2ff;text-decoration:none">ETX</a></div>
 <header class="sohstx-banner"><div class="brand-crop"><img src="./brand-header.webp" alt="SohStx Health"></div><button id="brand-install" type="button">Install Personal</button></header>
 <main><section class="hero"><div><span class="eyebrow">HEALTH INTELLIGENCE / V2</span><h1 id="pageTitle">Your health at a glance</h1><p>LibreView glucose analytics, personal events, and your complete local history.</p></div><div class="hero-actions"><button id="importBtn" class="primary">＋ Import Data</button><input type="file" id="csvFile" accept=".csv,text/csv" hidden></div></section><div id="notice" role="status" aria-live="polite"></div>
 <nav class="tabs" aria-label="Dashboard sections"><button class="tab active" data-tab="home">⌂ Home</button><button class="tab" data-tab="charts">⌁ Charts</button><button class="tab" data-tab="analysis">◈ Analysis</button><button class="tab" data-tab="records">☷ Records</button><button class="tab" data-tab="tools">⚙ More</button></nav>
@@ -1046,5 +1046,5 @@ window.addEventListener("load", () => {
     }
   }
 </style>
-</body>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script></body>
 </html>

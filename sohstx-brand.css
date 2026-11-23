@@ -1,0 +1,13 @@
+/* SohStx shared brand layer: portal pages and nonintrusive app/game identity */
+:root{--soh-bg:#050a10;--soh-panel:#101b24;--soh-cyan:#27cefa;--soh-line:#365f72;--soh-text:#e9f0f4;--soh-muted:#a9bbc7}
+.sohstx-brandbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px clamp(16px,4vw,48px);background:#050a10;color:#e9f0f4;border-bottom:1px solid #36627a;font:700 13px/1.3 system-ui,sans-serif;letter-spacing:.09em;position:relative;z-index:15}
+.sohstx-brandbar a{color:inherit;text-decoration:none}.sohstx-brandbar a:hover{color:#27cefa}.sohstx-brandbar .soh-name{font:800 16px/1.2 ui-monospace,monospace;letter-spacing:.12em;white-space:nowrap}.sohstx-brandbar .soh-name b{color:#27cefa}.sohstx-brandbar .soh-links{display:flex;align-items:center;gap:clamp(10px,2vw,28px);flex-wrap:wrap}.sohstx-brandbar .soh-end{border:1px solid #27cefa;color:#27cefa;padding:7px 13px;font:800 13px ui-monospace,monospace}
+.sohstx-philosophy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid #365f72;border-bottom:1px solid #365f72;margin:34px auto 20px;padding:18px 0;color:#e9f0f4;max-width:1250px}
+.sohstx-philosophy>div{text-align:center;padding:10px 12px}.sohstx-philosophy>div+div{border-left:1px solid #365f72}.sohstx-philosophy strong{display:block;color:#27cefa;font:800 13px/1.4 ui-monospace,monospace;letter-spacing:.16em;margin-bottom:8px}.sohstx-philosophy span{display:block;font:14px/1.5 system-ui,sans-serif}
+.sohstx-portal{background:#050a10;color:var(--soh-text);background-image:radial-gradient(ellipse 75% 45% at 50% 15%,#112635,transparent 85%)}
+.sohstx-portal .card,.sohstx-portal .box,.sohstx-portal .small{background:linear-gradient(130deg,#142631,#070e14);border-color:#426a7d;box-shadow:inset 0 1px 0 #d3f3ff1a}
+.sohstx-portal .card:hover,.sohstx-portal .box:hover{border-color:var(--soh-cyan)}
+.sohstx-portal .mark b,.sohstx-portal .kicker{color:var(--soh-cyan)}
+.sohstx-portal .action,.sohstx-portal button.primary{background:var(--soh-cyan);color:#06131a}
+.sohstx-portal .intro h1{color:#e9f0f4}
+@media(max-width:650px){.sohstx-brandbar{flex-wrap:wrap;justify-content:center}.sohstx-brandbar .soh-links{justify-content:center}.sohstx-philosophy{grid-template-columns:1fr;padding:4px 0}.sohstx-philosophy>div+div{border-left:0;border-top:1px solid #365f72}}

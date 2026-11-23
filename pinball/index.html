@@ -127,4 +127,4 @@ function draw(){const bg=ctx.createLinearGradient(0,0,0,560);bg.addColorStop(0,'
 for(const p of sparks){ctx.globalAlpha=Math.max(0,p.life/p.max);oval(p.x,p.y,p.size,p.size,p.color)}ctx.globalAlpha=1;
  if(paused||mode==='over'){ctx.fillStyle='#071727ba';ctx.fillRect(0,210,360,89);label(paused?'Paused':'Game over',180,263,32,'#fff0c9')}}
 let last=0,acc=0;function frame(t){acc+=Math.min((t-last)/1000,.04);last=t;while(acc>=1/240){step(1/240);acc-=1/240}draw();requestAnimationFrame(frame)}ready();requestAnimationFrame(frame)
-</script></body></html>
+</script><script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});</script></body></html>

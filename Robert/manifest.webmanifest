@@ -2,20 +2,20 @@
   "name": "That Time I Got Reincarnated as Bobert",
   "short_name": "Bobert",
   "description": "SohStx game",
-  "start_url": "/Bobert/",
-  "scope": "/Bobert/",
+  "start_url": "/Robert/",
+  "scope": "/Robert/",
   "display": "standalone",
   "background_color": "#10191b",
   "theme_color": "#10191b",
   "icons": [
     {
-      "src": "/brand-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/brand-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
