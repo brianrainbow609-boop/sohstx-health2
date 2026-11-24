@@ -1,0 +1,1 @@
+﻿(function(root){'use strict';root.SohStxStorage=Object.freeze({read(storage,key){return JSON.parse(storage.getItem(key));},write(storage,key,value){storage.setItem(key,JSON.stringify(value));}});})(globalThis);

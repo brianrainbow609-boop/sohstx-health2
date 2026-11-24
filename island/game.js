@@ -11,11 +11,11 @@ const cap=x=>Math.max(0,Math.min(100,x));
 const saveKey='sohstx-driftwood-1';
 function newIsland(){return {time:0,food:64,water:65,shelter:72,vitality:92,energy:4,effect:-1,until:0,won:false,ended:false,paused:false,speed:1,logs:['Day 1 · The crew and both dogs make camp.'],people:Array.from({length:17},(_,i)=>({x:330+(i%6)*40,y:273+Math.floor(i/6)*39,job:i%4,work:0,dx:0,dy:0,face:1}))}}
 let state=newIsland();
-try{const v=JSON.parse(localStorage.getItem(saveKey));if(v?.people?.length===17 && Number.isFinite(v.time))state=v}catch{}
+try{const v=SohStxStorage.read(localStorage,saveKey);if(v?.people?.length===17 && Number.isFinite(v.time))state=v}catch{}
 const day=()=>1+Math.floor(state.time/48);
 const phase=()=>Math.floor(state.time%48/12);
 function note(s){state.logs.unshift('Day '+day()+' · '+s);state.logs.length=Math.min(5,state.logs.length)}
-function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{}}
+function save(){try{SohStxStorage.write(localStorage,saveKey,state)}catch{}}
 function assign(p,i){
  const needs=[82-state.food,82-state.water,80-state.shelter,phase()===3?58:12];
  if(i===10||i===11){needs[0]+=20;needs[2]=-99}

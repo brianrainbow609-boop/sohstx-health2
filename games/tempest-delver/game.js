@@ -14,9 +14,9 @@ const traits = [
  ['Infinite Regeneration','Recover 4 HP after each victory.',24,2]
 ];
 let state = {gems:0, traits:[], run:null, wins:0};
-try {const old=JSON.parse(localStorage.getItem(key)); if(old && Array.isArray(old.traits) && Number.isFinite(old.gems)) state=old;} catch {}
+try {const old=SohStxStorage.read(localStorage,key); if(old && Array.isArray(old.traits) && Number.isFinite(old.gems)) state=old;} catch {}
 let message='', storageOK=true;
-function save(){try{localStorage.setItem(key,JSON.stringify(state));}catch{storageOK=false;}}
+function save(){try{SohStxStorage.write(localStorage,key,state);}catch{storageOK=false;}}
 function has(i){return state.traits.includes(i);}
 function route(){
  return [['fight','cache'],[pick(['altar','fight']),'shop'],[pick(['cache','fight']),pick(['altar','fight'])],['shop','fight'],['boss']].map(pair=>Math.random()<.5?pair.reverse():pair);
