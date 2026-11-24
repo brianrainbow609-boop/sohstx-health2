@@ -1,5 +1,12 @@
 [
   {
+    "dir": "games/tempest-chess",
+    "title": "Tempest Chess",
+    "genre": "Fantasy chess",
+    "art": "tempest-chess",
+    "description": "Take the white pieces in Rimuru’s war council. Challenge Gobta, Benimaru, or Raphael and change difficulty during the match."
+  },
+  {
     "dir": "island",
     "title": "Driftwood Isle",
     "genre": "Island survival sim",
