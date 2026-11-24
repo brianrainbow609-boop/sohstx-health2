@@ -4,7 +4,7 @@ const roll = n => Math.floor(Math.random()*n);
 const pick = list => list[roll(list.length)];
 const key = 'sohstx.tempest-delver.v1';
 const lands = ['Jura Crystal Caverns','Dwargon Underkeep','Storm Dragon Castle'];
-const beasts = [['Cave centipede','Armorsaurus'],['Iron sentinel','Runic gargoyle'],['Storm drake','Obsidian knight']];
+const beasts = [['Crystal Basilisk','Rune Gargoyle'],['Ember Griffin','Rune Gargoyle'],['Crystal Basilisk','Ember Griffin','Rune Gargoyle']];
 const lords = ['Orc Disaster','Dwarven Gate Colossus','Veldora’s Storm Echo'];
 const traits = [
  ['Analyze','Strike deals 2 extra damage.',8,-1],
@@ -27,7 +27,7 @@ function start(){
 }
 function restore(hp,mp){const r=state.run;r.hp=Math.min(r.max,r.hp+hp);r.mp=Math.min(9,r.mp+mp);}
 function next(){
- const r=state.run;r.step++;r.mode='route';r.enemy=null;
+ const r=state.run;delete r.tile;r.step++;r.mode='route';r.enemy=null;
  if(r.step===5){if(r.zone===2){r.mode='won';state.wins++;}else{r.zone++;r.step=0;r.map=route();restore(12,4);message+=' Recovered 12 HP and 4 magicules at camp.';}}
 }
 function enter(kind){
@@ -60,17 +60,9 @@ function button(parent,label,fn,disabled=false,detail=''){
  const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=disabled;
  if(detail){const s=document.createElement('small');s.textContent=detail;b.append(s);}b.onclick=fn;parent.append(b);
 }
-function draw(){
- const r=state.run,c=$('actors').getContext('2d');c.clearRect(0,0,360,148);
- const slime=['      aaa      ','    abbcbba    ','  abccbbbbba   ',' abbbbbbbbbba  ','abbbdbbbdbbbba ','abbbbbbbbbbbba ',' aabbbbbbbaaa  ','   aaaaaaa     '];
- const foe=['  x       x  ','  xx     xx  ','   xxxxxxx   ','  xyyxxxyyx  ',' xxzyxyxyzxx ',' xxxyyyxyxxx ','  xxyyyyyxx  ',' xxxxyyyxxxx ',' xx xxxxx xx ','    xx xx    '];
- function sprite(rows,x,y,scale,palette){rows.forEach((row,j)=>[...row].forEach((k,i)=>{if(palette[k]){c.fillStyle=palette[k];c.fillRect(x+i*scale,y+j*scale,scale,scale);}}));}
- sprite(slime,83,101,3,{a:'#277f9c',b:'#62dae3',c:'#c8fff5',d:'#15384d'});
- if(r?.enemy){const boss=r.mode==='boss',s=boss?4:3;sprite(foe,233,127-foe.length*s,s,{x:'#252334',y:boss?'#ca785e':'#887aa0',z:'#fee2a1'});}
-}
 const names={fight:'Monster den',cache:'Treasure vault',shop:'Kaijin’s store',altar:'Spirit spring',boss:'Castle gate'};
 function render(){
- const r=state.run, z=r?.zone||0, mode=r?.mode||'home', a=$('actions');a.replaceChildren();$('scene').src='zone'+z+'.webp';draw();
+ const r=state.run, z=r?.zone||0, mode=r?.mode||'home', a=$('actions');a.replaceChildren();Dungeon.sync(r, state.avatar || 'Hector');
  $('area').textContent=lands[z];$('stats').textContent=(r?'HP '+r.hp+'/'+r.max+'   ·   Magicules '+r.mp+'/9   ·   ':'')+'◆ '+state.gems+' gems'+(r?'   ·   Draughts '+r.potions:'');
  $('path').replaceChildren();
  if(r)for(let i=0;i<5;i++){const el=document.createElement('i');if(i<=r.step)el.className='done';$('path').append(el);}
@@ -79,13 +71,13 @@ function render(){
  if(mode==='home'){copy('The labyrinth awaits','Guide Rimuru through Jura’s caverns and two castle strongholds. Choose your rooms, absorb monsters and carry gems into your next life.');act('Enter the labyrinth',start);}
  if(mode==='route'){
   copy('Choose your passage','Depth '+(z+1)+' of 3 · Chamber '+(r.step+1)+' of 5. '+(r.step===4?'A guardian blocks the way forward.':'Great Sage senses '+[...new Set(r.map[r.step])].map(k=>({fight:'a hostile aura',cache:'buried treasure',shop:'a merchant',altar:'healing water'})[k]).join(' and ')+'.'));
-  for(const k of new Set(r.map[r.step])) act(names[k],()=>enter(k));
+  for(const k of new Set(r.map[r.step])) act(names[k],()=>Dungeon.go(k));
   if(r.potions && r.hp<r.max)act('Drink draught (+18 HP)',()=>{r.potions--;restore(18,0);message='Drank a healing draught.';update();});
  }
  if(mode==='fight'||mode==='boss'){
   const e=r.enemy;copy(e.name,(mode==='boss'?'Guardian':'Monster')+' · '+e.hp+'/'+e.max+' HP. '+(e.turn%3===0?'Charging a heavy blow':'Preparing a strike')+' for '+Math.max(0,incoming()-r.armor)+' damage.');
-  act('Strike · +1 MP',()=>fight('strike'));act('Water Blade · '+(has(1)?2:3)+' MP',()=>fight('blade'),r.mp<(has(1)?2:3));
-  act('Predator · 2 MP',()=>fight('feed'),r.mp<2);act('Guard · +3 MP',()=>fight('guard'));act('Draught · +18 HP',()=>fight('potion'),!r.potions||r.hp===r.max);
+  act('Strike · +1 MP',()=>Dungeon.attack('strike'));act('Water Blade · '+(has(1)?2:3)+' MP',()=>Dungeon.attack('blade'),r.mp<(has(1)?2:3));
+  act('Predator · 2 MP',()=>Dungeon.attack('feed'),r.mp<2);act('Guard · +3 MP',()=>Dungeon.attack('guard'));act('Draught · +18 HP',()=>Dungeon.attack('potion'),!r.potions||r.hp===r.max);
  }
  function finish(txt){message=txt;next();update();}
  if(mode==='cache'){
@@ -113,5 +105,10 @@ function renderTree(){
  });
 }
 function openTree(){renderTree();$('tree').showModal();}
+Dungeon.init({
+ enter, fight, persist:save,
+ select(name){state.avatar=name;update();},
+ canFight(move){return state.run?.enemy && (move!=='blade'||state.run.mp>=(has(1)?2:3)) && (move!=='feed'||state.run.mp>=2) && (move!=='potion'||state.run.potions>0);}
+});
 $('research').onclick=openTree;$('close').onclick=()=>$('tree').close();render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
