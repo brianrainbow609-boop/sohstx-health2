@@ -1,5 +1,12 @@
 [
   {
+    "dir": "games/tempest-delver",
+    "title": "Tempest Delver",
+    "genre": "Dungeon roguelite",
+    "art": "tempest-delver",
+    "description": "Guide Rimuru through Jura’s caverns and castle strongholds. Absorb monsters, trade magic gems and evolve between expeditions."
+  },
+  {
     "dir": "games/tempest-chess",
     "title": "Tempest Chess",
     "genre": "Fantasy chess",
