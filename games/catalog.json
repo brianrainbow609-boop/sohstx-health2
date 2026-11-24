@@ -1,5 +1,12 @@
 [
   {
+    "dir": "games/tloves-city-builder",
+    "title": "TLoves City Builder",
+    "genre": "City building · Survival",
+    "art": "tloves-city-builder",
+    "description": "Lead the red-glove hero and his crew as they farm, claim land and raise watchtowers. Hold the town against mythical raiders and the Tire Demon."
+  },
+  {
     "dir": "games/tempest-delver",
     "title": "Tempest Delver",
     "genre": "Dungeon roguelite",
