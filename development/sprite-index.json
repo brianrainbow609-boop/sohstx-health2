@@ -1,0 +1,86 @@
+{
+  "fighters": {
+    "type": "character",
+    "project": "tire-shots-rival",
+    "frames": "tire-shots-rival/sprites/manifest.json",
+    "names": [
+      "Hector",
+      "Erasmo"
+    ]
+  },
+  "atlases": [
+    {
+      "file": "games/tempest-delver/hector.webp",
+      "name": "Hector",
+      "type": "character",
+      "tile": 64
+    },
+    {
+      "file": "games/tempest-delver/erasmo.webp",
+      "name": "Erasmo",
+      "type": "character",
+      "tile": 64
+    },
+    {
+      "file": "games/tempest-delver/crew.webp",
+      "name": "Driftwood crew",
+      "type": "crew",
+      "tile": 48
+    },
+    {
+      "file": "island/crew.webp",
+      "name": "Driftwood crew",
+      "type": "crew"
+    },
+    {
+      "file": "games/tempest-delver/monsters.webp",
+      "name": "Dungeon bestiary",
+      "type": "monster",
+      "tile": 96,
+      "columns": 3,
+      "names": [
+        "Crystal Basilisk",
+        "Ember Griffin",
+        "Rune Gargoyle",
+        "Orc Disaster",
+        "Dwarven Gate Colossus",
+        "Veldora’s Storm Echo"
+      ]
+    }
+  ],
+  "embedded": [
+    {
+      "project": "Robert",
+      "name": "Bobert",
+      "type": "character"
+    },
+    {
+      "project": "TireShop",
+      "name": "Tire Demon",
+      "type": "monster"
+    },
+    {
+      "project": "games/tloves-city-builder",
+      "type": "character",
+      "names": {
+        "hero": "City Builder hero",
+        "tech": "Shop tech",
+        "knight": "Shield Knight",
+        "blue": "Blue-cap tech"
+      }
+    },
+    {
+      "project": "games/tloves-city-builder",
+      "type": "monster",
+      "names": {
+        "demon": "Tire Demon",
+        "Crystal Basilisk": "Crystal Basilisk",
+        "Ember Griffin": "Ember Griffin",
+        "Rune Gargoyle": "Rune Gargoyle",
+        "Orc Disaster": "Orc Disaster",
+        "Dwarven Gate Colossus": "Dwarven Gate Colossus",
+        "Veldora’s Storm Echo": "Veldora’s Storm Echo"
+      }
+    }
+  ]
+}

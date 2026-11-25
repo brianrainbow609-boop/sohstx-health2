@@ -13,4 +13,4 @@ Original image files are stored on [Game Asset Integration Space Page](https://c
 
 ## Game integration
 
-The existing game at `tire-shots-rival/index.html` uses `/island/crew.webp` as a provisional atlas. Before replacing it, extract verified frames, compare existing game animations, preserve originals, and test on mobile and desktop.
+[Tire Shots Rival](../tire-shots-rival/) uses [36 transparent PNG frames](../tire-shots-rival/sprites/manifest.json). Each fighter has four idle, eight walk and six attack frames. The [project sprite index](sprite-index.json) identifies the external sheets and embedded game sprites.

@@ -1,0 +1,273 @@
+{
+  "source": "Pixel-Art Character Sprite Sheet Duo.png",
+  "characters": [
+    "Hector",
+    "Erasmo"
+  ],
+  "frames_per_character": {
+    "idle": 4,
+    "walk": 8,
+    "attack": 6
+  },
+  "notes": "Largest connected-character masking with nearby detached detail preserved; review sheet before release.",
+  "frames": [
+    {
+      "file": "erasmo-attack-00.png",
+      "dimensions": [
+        127,
+        153
+      ]
+    },
+    {
+      "file": "erasmo-attack-01.png",
+      "dimensions": [
+        135,
+        155
+      ]
+    },
+    {
+      "file": "erasmo-attack-02.png",
+      "dimensions": [
+        153,
+        151
+      ]
+    },
+    {
+      "file": "erasmo-attack-03.png",
+      "dimensions": [
+        166,
+        148
+      ]
+    },
+    {
+      "file": "erasmo-attack-04.png",
+      "dimensions": [
+        141,
+        143
+      ]
+    },
+    {
+      "file": "erasmo-attack-05.png",
+      "dimensions": [
+        108,
+        145
+      ]
+    },
+    {
+      "file": "erasmo-idle-00.png",
+      "dimensions": [
+        123,
+        162
+      ]
+    },
+    {
+      "file": "erasmo-idle-01.png",
+      "dimensions": [
+        119,
+        162
+      ]
+    },
+    {
+      "file": "erasmo-idle-02.png",
+      "dimensions": [
+        118,
+        159
+      ]
+    },
+    {
+      "file": "erasmo-idle-03.png",
+      "dimensions": [
+        117,
+        160
+      ]
+    },
+    {
+      "file": "erasmo-walk-00.png",
+      "dimensions": [
+        123,
+        154
+      ]
+    },
+    {
+      "file": "erasmo-walk-01.png",
+      "dimensions": [
+        114,
+        153
+      ]
+    },
+    {
+      "file": "erasmo-walk-02.png",
+      "dimensions": [
+        115,
+        153
+      ]
+    },
+    {
+      "file": "erasmo-walk-03.png",
+      "dimensions": [
+        106,
+        152
+      ]
+    },
+    {
+      "file": "erasmo-walk-04.png",
+      "dimensions": [
+        91,
+        154
+      ]
+    },
+    {
+      "file": "erasmo-walk-05.png",
+      "dimensions": [
+        77,
+        154
+      ]
+    },
+    {
+      "file": "erasmo-walk-06.png",
+      "dimensions": [
+        65,
+        154
+      ]
+    },
+    {
+      "file": "erasmo-walk-07.png",
+      "dimensions": [
+        78,
+        157
+      ]
+    },
+    {
+      "file": "hector-attack-00.png",
+      "dimensions": [
+        139,
+        147
+      ]
+    },
+    {
+      "file": "hector-attack-01.png",
+      "dimensions": [
+        128,
+        147
+      ]
+    },
+    {
+      "file": "hector-attack-02.png",
+      "dimensions": [
+        169,
+        145
+      ]
+    },
+    {
+      "file": "hector-attack-03.png",
+      "dimensions": [
+        159,
+        140
+      ]
+    },
+    {
+      "file": "hector-attack-04.png",
+      "dimensions": [
+        159,
+        140
+      ]
+    },
+    {
+      "file": "hector-attack-05.png",
+      "dimensions": [
+        102,
+        140
+      ]
+    },
+    {
+      "file": "hector-idle-00.png",
+      "dimensions": [
+        117,
+        159
+      ]
+    },
+    {
+      "file": "hector-idle-01.png",
+      "dimensions": [
+        115,
+        159
+      ]
+    },
+    {
+      "file": "hector-idle-02.png",
+      "dimensions": [
+        112,
+        159
+      ]
+    },
+    {
+      "file": "hector-idle-03.png",
+      "dimensions": [
+        111,
+        159
+      ]
+    },
+    {
+      "file": "hector-walk-00.png",
+      "dimensions": [
+        116,
+        145
+      ]
+    },
+    {
+      "file": "hector-walk-01.png",
+      "dimensions": [
+        112,
+        143
+      ]
+    },
+    {
+      "file": "hector-walk-02.png",
+      "dimensions": [
+        103,
+        145
+      ]
+    },
+    {
+      "file": "hector-walk-03.png",
+      "dimensions": [
+        100,
+        144
+      ]
+    },
+    {
+      "file": "hector-walk-04.png",
+      "dimensions": [
+        97,
+        147
+      ]
+    },
+    {
+      "file": "hector-walk-05.png",
+      "dimensions": [
+        87,
+        148
+      ]
+    },
+    {
+      "file": "hector-walk-06.png",
+      "dimensions": [
+        77,
+        146
+      ]
+    },
+    {
+      "file": "hector-walk-07.png",
+      "dimensions": [
+        92,
+        145
+      ]
+    }
+  ],
+  "type": "character",
+  "project": "tire-shots-rival",
+  "aliases": {
+    "Hector": "Robert on the original sheet",
+    "Erasmo": "Brian on the original sheet"
+  }
+}
