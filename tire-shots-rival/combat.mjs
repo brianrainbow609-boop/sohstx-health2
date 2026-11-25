@@ -12,10 +12,12 @@ export function restoreProgress(saved, roster) {
     const value = saved?.[key];
     if (Number.isSafeInteger(value) && value >= minimum) progress[key] = value;
   }
-  progress.me = findFighter(saved?.me, roster) ?? roster[0].id;
+  const firstFighter = findFighter('hector', roster) ?? roster[0].id;
+  progress.me = findFighter(saved?.me, roster) ?? firstFighter;
   const enemy = findFighter(saved?.enemy, roster);
+  const preferredEnemy = progress.me === firstFighter ? findFighter('erasmo', roster) : firstFighter;
   progress.enemy = enemy && enemy !== progress.me
-    ? enemy : roster.find(({ id }) => id !== progress.me).id;
+    ? enemy : preferredEnemy ?? roster.find(({ id }) => id !== progress.me).id;
   return progress;
 }
 

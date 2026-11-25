@@ -1,4 +1,4 @@
-# Tire Shots Rival asset inventory
+# Tire Shop Rivals asset inventory
 
 Canonical names: Hector (top; sometimes mislabeled Robert) and Erasmo (bottom; sometimes mislabeled Brian). Bobbert/Bobby is the existing sprite compatibility reference.
 
@@ -13,4 +13,4 @@ Original image files are stored on [Game Asset Integration Space Page](https://c
 
 ## Game integration
 
-[Tire Shots Rival](../tire-shots-rival/) uses [36 transparent PNG frames](../tire-shots-rival/sprites/manifest.json). Each fighter has four idle, eight walk and six attack frames. The [project sprite index](sprite-index.json) identifies the external sheets and embedded game sprites.
+[Tire Shop Rivals](../tire-shots-rival/) uses [36 transparent PNG frames](../tire-shots-rival/sprites/manifest.json). Each fighter has four idle, eight walk and six attack frames. The [project sprite index](sprite-index.json) identifies the external sheets and embedded game sprites.

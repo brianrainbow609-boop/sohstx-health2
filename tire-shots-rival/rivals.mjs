@@ -1,7 +1,7 @@
-import { cooldown, newFight, resolvePunch, restoreProgress, upgrade } from './combat.mjs';
+import { cooldown, newFight, resolvePunch, restoreProgress, upgrade } from './combat.mjs?v=20261125b';
 
 const storageKey = 'tireShotsRival';
-const version = '20261125';
+const version = '20261125b';
 const get = (id) => document.getElementById(id);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const statControls = new Map();

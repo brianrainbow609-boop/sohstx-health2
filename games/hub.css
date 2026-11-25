@@ -8,3 +8,9 @@ header{background:#050a10;border-color:#345f73}
 .brand i{border-color:#28cfff;box-shadow:inset 0 0 0 2px #28cfff}
 .hero{background-color:#0c1a25;border-color:#3a6579;border-bottom-color:#28cfff}
 .hero:before{background:linear-gradient(90deg,#0b1821 19%,#0b1821fb 31%,transparent 62%)}
+.cover img[src$="/tire-shop-rivals.webp"] { aspect-ratio: auto; }
+.cover:has(> img[src$="/tire-shop-rivals.webp"]) > span {
+  position: static;
+  display: inline-block;
+  margin: .45rem .65rem 0;
+}
