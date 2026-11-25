@@ -47,7 +47,9 @@
       "Valdez",
       "Veldora’s Storm Echo",
       "Witch"
-    ]
+    ],
+    "motionSheets": "tire-shots-rival/roster/motion/",
+    "motionPreview": "tire-shots-rival/#motion-panel"
   },
   "atlases": [
     {

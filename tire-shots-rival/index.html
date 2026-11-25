@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Tire Shop Rivals</title>
   <link rel="stylesheet" href="/games/shared/controls.css">
-  <link rel="stylesheet" href="./rivals.css?v=20261125">
+  <link rel="stylesheet" href="./rivals.css?v=20261125c">
   <script src="/games/shared/legacy-storage.js"></script>
-  <script type="module" src="./rivals.mjs?v=20261125b"></script>
+  <script type="module" src="./rivals.mjs?v=20261125c"></script>
 </head>
 <body>
   <main>
@@ -45,6 +45,16 @@
       </div>
       <div id="roster" class="roster"></div>
       <p id="empty" hidden>No fighters match your search.</p>
+      <details id="motion-panel">
+        <summary>Sprite animations</summary>
+        <p id="motion-fighter"></p>
+        <div class="motion-controls">
+          <label>Motion <select id="motion-action"></select></label>
+          <button id="motion-replay" type="button">Replay</button>
+        </div>
+        <canvas id="motion-preview" width="160" height="150" role="img" aria-label="Selected fighter animation"></canvas>
+        <a id="motion-download" download>Download sprite sheet (PNG)</a>
+      </details>
     </section>
     <section aria-labelledby="upgrade-heading">
       <h2 id="upgrade-heading">Upgrade your fighter</h2>

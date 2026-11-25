@@ -1,15 +1,19 @@
 import { cooldown, newFight, resolvePunch, restoreProgress, upgrade } from './combat.mjs?v=20261125b';
 
+import { drawMotion, frameCount, motionFrame, motions } from './motion.mjs?v=20261125c';
+
 const storageKey = 'tireShotsRival';
-const version = '20261125b';
+const version = '20261125c';
 const get = (id) => document.getElementById(id);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const statControls = new Map();
 const atlases = new Map();
+const sheets = new Map();
 const assets = new URL('./roster/', import.meta.url);
 const sides = [get('myface'), get('theirface')];
 let roster, fighters, columns, cell, progress, fight, lastExchange, autoTimer;
 let isAuto = false;
+let previewStart = null;
 let storageError = false;
 
 function save() {
@@ -25,6 +29,35 @@ function save() {
 
 function urlFor(path) {
   return new URL(path + '?v=' + version, assets);
+}
+
+function motionPath(id) {
+  return urlFor('motion/' + encodeURIComponent(id) + '.png');
+}
+
+function loadMotion(id) {
+  if (sheets.has(id)) return;
+  const image = new Image();
+  sheets.set(id, image);
+  image.src = motionPath(id);
+  image.decode().then(() => {
+    if (progress?.me === id && get('motion-panel').open && !reducedMotion.matches) {
+      restartPreview();
+    }
+  }, () => sheets.delete(id));
+}
+
+function restartPreview() {
+  previewStart = performance.now();
+}
+
+function setMotionFighters() {
+  loadMotion(progress.me);
+  loadMotion(progress.enemy);
+  get('motion-download').href = motionPath(progress.me);
+  get('motion-download').download = progress.me + '-motions.png';
+  get('motion-fighter').textContent = fighters.get(progress.me).label;
+  previewStart = reducedMotion.matches ? null : performance.now();
 }
 
 function draw(canvas, fighter, frame, side, { x = 0, y = 0, rotation = 0 } = {}) {
@@ -88,6 +121,7 @@ function setMatchup() {
   get('enemy').value = progress.enemy;
   get('mine').textContent = fighters.get(progress.me).label;
   get('theirs').textContent = fighters.get(progress.enemy).label;
+  setMotionFighters();
 }
 
 function createStats() {
@@ -185,12 +219,20 @@ function poseFor(fighter, side, time) {
   const reaction = side ? lastExchange?.damage : lastExchange?.counter;
   const impactDelay = side ? 60 : 140;
   if (down && elapsed >= impactDelay) {
+    const sheet = sheets.get(fighter.id);
+    if (sheet?.complete && sheet.naturalWidth) {
+      return ['die', motionFrame('die', elapsed - impactDelay)];
+    }
     return [fighter.portrait, { y: 22, x: -direction * 25, rotation: -direction * 0.7 }];
   }
   const didAttack = !side || lastExchange?.counter;
   const attackTime = elapsed - (side ? 80 : 0);
   if (didAttack && attackTime >= 0 && attackTime < lastExchange?.duration) {
     const phase = attackTime / lastExchange.duration;
+    const sheet = sheets.get(fighter.id);
+    if (sheet?.complete && sheet.naturalWidth) {
+      return ['punch', Math.min(frameCount - 1, Math.floor(phase * frameCount))];
+    }
     const clip = fighter.clips.attack;
     const frame = clip ? clip[0] + Math.floor(phase * clip[1]) : fighter.portrait;
     const lunge = Math.sin(Math.PI * phase);
@@ -202,6 +244,8 @@ function poseFor(fighter, side, time) {
   const recoilTime = elapsed - impactDelay;
   const x = reaction && recoilTime >= 0 && recoilTime < 155
     ? -direction * 10 * (1 - recoilTime / 155) : 0;
+  const sheet = sheets.get(fighter.id);
+  if (sheet?.complete && sheet.naturalWidth) return ['idle', motionFrame('idle', time), x];
   const frame = idle ? idle[0] + Math.floor(time * fighter.fps / 1000) % idle[1] : fighter.portrait;
   return [frame, { x, y: idle ? 0 : -Math.round(2 * (1 + Math.sin(time / 300 + side))) }];
 }
@@ -209,8 +253,24 @@ function poseFor(fighter, side, time) {
 function animate(time) {
   for (const [side, id] of [progress.me, progress.enemy].entries()) {
     const fighter = fighters.get(id);
-    const [frame, motion] = poseFor(fighter, side, time);
-    draw(sides[side], fighter, frame, side, motion);
+    const [frame, motion, recoil] = poseFor(fighter, side, time);
+    if (typeof frame === 'string') {
+      drawMotion(sides[side], sheets.get(id), frame, motion, Boolean(side), recoil);
+    } else {
+      draw(sides[side], fighter, frame, side, motion);
+    }
+  }
+  if (get('motion-panel').open) {
+    const canvas = get('motion-preview');
+    const fighter = fighters.get(progress.me);
+    const sheet = sheets.get(fighter.id);
+    const action = get('motion-action').value;
+    const frame = motionFrame(action, previewStart === null ? 0 : time - previewStart);
+    if (sheet?.complete && sheet.naturalWidth) {
+      drawMotion(canvas, sheet, action, frame);
+    } else {
+      draw(canvas, fighter, fighter.portrait, null);
+    }
   }
   requestAnimationFrame(animate);
 }
@@ -221,6 +281,19 @@ function bindControls() {
   get('enemy').addEventListener('change', (event) => {
     progress.enemy = event.target.value;
     matchup();
+  });
+  const motionSelect = get('motion-action');
+  motionSelect.replaceChildren(...Object.keys(motions).map((action) =>
+    new Option(action[0].toUpperCase() + action.slice(1), action)));
+  motionSelect.value = 'walk';
+  motionSelect.addEventListener('change', restartPreview);
+  get('motion-replay').addEventListener('click', restartPreview);
+  if (location.hash === '#motion-panel') get('motion-panel').open = true;
+  get('motion-panel').addEventListener('toggle', () => {
+    if (get('motion-panel').open && !reducedMotion.matches) restartPreview();
+  });
+  reducedMotion.addEventListener('change', () => {
+    previewStart = reducedMotion.matches ? null : performance.now();
   });
   get('punch').addEventListener('click', punch);
   get('next').addEventListener('click', nextRound);

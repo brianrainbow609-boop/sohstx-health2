@@ -27,3 +27,9 @@ canvas { display: block; image-rendering: pixelated; }
 progress { display: block; width: 100%; max-width: 220px; height: 12px; margin: 5px auto 3px; accent-color: #5cdb8b; }
 .vs { color: #f6c84d; font-weight: 900; }
 #message { color: #ffe08a; min-height: 2.6em; margin: 8px 0; font-weight: 700; }
+
+#motion-panel { margin-top: 12px; padding: 12px; border-radius: 9px; background: #34425d; }
+#motion-panel summary { cursor: pointer; font-weight: 700; }
+#motion-fighter { margin-bottom: 8px; }
+.motion-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+#motion-preview { margin: 8px auto; max-width: 100%; height: auto; }
