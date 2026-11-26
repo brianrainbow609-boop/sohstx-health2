@@ -37,6 +37,28 @@ for (const name of manifest.characters) {
   }
 }
 assert.deepEqual(manifest.frames.map(f => f.file).sort(), expected.sort());
+const rivalRoster = JSON.parse(read('tire-shots-rival/roster/index.json'));
+assert.equal(rivalRoster.fighters.length, 43, 'Tire Shop Rivals roster size');
+const fighterIds = new Set();
+const atlasIds = new Set();
+for (const fighter of rivalRoster.fighters) {
+  assert.ok(fighter.id && !fighterIds.has(fighter.id), 'unique fighter id: ' + fighter.id);
+  fighterIds.add(fighter.id);
+  assert.ok(Number.isInteger(fighter.atlas) && fighter.atlas >= 0, fighter.name + ' atlas index');
+  assert.ok(Number.isInteger(fighter.start) && fighter.start >= 0, fighter.name + ' frame start');
+  assert.ok(Number.isInteger(fighter.frames) && fighter.frames > 0, fighter.name + ' frame count');
+  atlasIds.add(fighter.atlas);
+  const motion = read('tire-shots-rival/roster/motion/' + fighter.id + '.png');
+  assert.equal(motion.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', fighter.name + ' motion sheet');
+}
+for (const atlas of atlasIds) {
+  const file = 'tire-shots-rival/roster/fighters-' + atlas + '.webp';
+  assert.ok(read(file).subarray(8, 12).toString() === 'WEBP', 'fighter atlas ' + atlas);
+}
+const motionConfig = rivalRoster.motionSheets;
+assert.equal(motionConfig.columns, 8);
+assert.equal(motionConfig.rows.length, 7);
+console.log(rivalRoster.fighters.length + ' fighters, ' + fighterIds.size + ' unique IDs, ' + atlasIds.size + ' atlases and all motion sheets passed.');
 console.log(games.length + ' game entry points and ' + expected.length + ' labeled sprite frames passed.');
 
 const index = JSON.parse(read('development/sprite-index.json'));
