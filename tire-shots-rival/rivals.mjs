@@ -1,4 +1,4 @@
-import { cooldown, newFight, resolvePunch, restoreProgress, upgrade } from './combat.mjs?v=20261125b';
+import { cooldown, newFight, resolvePunch, restoreProgress, upgrade } from './combat.mjs?v=20261125d';
 
 import { drawMotion, frameCount, motionFrame, motions } from './motion.mjs?v=20261125c';
 
@@ -145,7 +145,7 @@ function createStats() {
 function renderStatus() {
   get('hp').value = fight.health;
   get('ehp').value = fight.opponentHealth;
-  get('score').textContent = `Round ${progress.round} · Wins ${progress.wins} · Points ${progress.points}`;
+  get('score').textContent = `Round ${progress.round} · Wins ${progress.wins} | Losses ${progress.losses} | Rival Lv ${fight.opponent.level} · Points ${progress.points}`;
   get('punch').disabled = Boolean(fight.result);
   get('next').disabled = !fight.result;
   for (const [stat, { label, button }] of statControls) {
@@ -176,7 +176,7 @@ function queuePunch() {
 
 function resetFight(message) {
   setAuto(false);
-  fight = newFight();
+  fight = newFight(progress);
   lastExchange = null;
   get('message').textContent = message;
   renderStatus();
@@ -302,7 +302,7 @@ function bindControls() {
     setAuto(!isAuto);
   });
   get('reset').addEventListener('click', () => {
-    if (!confirm('Reset your wins, points, and upgrades?')) return;
+    if (!confirm('Reset your wins, losses, points, and upgrades?')) return;
     progress = restoreProgress(null, roster);
     get('search').value = '';
     filterRoster();

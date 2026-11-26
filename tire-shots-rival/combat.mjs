@@ -1,5 +1,5 @@
 const stats = ['strength', 'speed', 'accuracy'];
-const defaults = { points: 0, wins: 0, round: 1, strength: 1, speed: 1, accuracy: 1 };
+const defaults = { points: 0, wins: 0, losses: 0, round: 1, strength: 1, speed: 1, accuracy: 1 };
 
 function findFighter(value, roster) {
   const id = value === 0 ? 'hector' : value === 1 ? 'erasmo' : value;
@@ -21,8 +21,16 @@ export function restoreProgress(saved, roster) {
   return progress;
 }
 
-export function newFight() {
-  return { health: 100, opponentHealth: 100, readyAt: 0, result: null };
+export function opponentBuild(progress = {}, roll = Math.random) {
+  const level = Math.max(1, Math.min(100, 1 + (progress.wins ?? 0) - (progress.losses ?? 0)));
+  const build = { level, strength: 1, speed: 1, accuracy: 1 };
+  for (let i = 1; i < level; i++) build[stats[Math.min(2, Math.floor(roll() * 3))]]++;
+  return build;
+}
+
+export function newFight(progress, roll = Math.random) {
+  return { health: 100, opponentHealth: 100, readyAt: 0, result: null,
+    opponent: opponentBuild(progress, roll) };
 }
 
 export function cooldown(speed) {
@@ -43,9 +51,11 @@ export function resolvePunch(progress, fight, now, roll = Math.random) {
     return { damage, counter: 0 };
   }
 
-  const counter = roll() < 0.6 ? Math.min(fight.health, 3 + Math.floor(roll() * 7)) : 0;
+  const opponent = fight.opponent ?? opponentBuild();
+  const chance = Math.min(0.95, 0.6 + (opponent.accuracy - 1) * 0.025 + (opponent.speed - 1) * 0.015);
+  const counter = roll() < chance ? Math.min(fight.health, 3 + Math.floor(roll() * 7) + (opponent.strength - 1) * 2) : 0;
   fight.health -= counter;
-  if (!fight.health) fight.result = 'loss';
+  if (!fight.health) { fight.result = 'loss'; progress.losses = (progress.losses ?? 0) + 1; }
   return { damage, counter };
 }
 
