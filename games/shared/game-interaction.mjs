@@ -28,8 +28,17 @@ try {
     try {
       const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
       if (!response?.ok()) throw new Error('HTTP ' + response?.status());
-      result.horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+      result.mobileAudit = await page.evaluate(() => {
+        const controls = [...document.querySelectorAll('button,a[href],input,select,textarea,[role="button"]')]
+          .filter(el => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; });
+        const undersized = controls.filter(el => { const r = el.getBoundingClientRect(); return r.width < 40 || r.height < 40; }).length;
+        return { viewportWidth: innerWidth, documentWidth: document.documentElement.scrollWidth,
+          horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 2,
+          visibleControls: controls.length, undersizedControls: undersized };
+      });
+      result.horizontalOverflow = result.mobileAudit.horizontalOverflow;
       if (result.horizontalOverflow) result.layoutWarning = 'Horizontal page overflow at 390px viewport';
+      if (result.mobileAudit.undersizedControls) result.tapTargetWarning = result.mobileAudit.undersizedControls + ' visible controls below 40px';
       if (game.dir === 'games/tempest-chess') {
         await page.locator('[data-square="e2"]').click();
         await page.locator('[data-square="e4"]').click();
@@ -81,7 +90,8 @@ try {
       failures.push(game.title + ': ' + error.message);
     }
     report.push(result);
-    console.log(result.status + ' ' + game.title + ' — ' + result.interactions.join(', '));
+    console.log(result.status + ' ' + game.title + ' — ' + result.interactions.join(', ') + ' — mobile: ' + JSON.stringify(result.mobileAudit || {}));
+    if (result.horizontalOverflow || result.mobileAudit?.undersizedControls) console.warn('MOBILE REVIEW ' + game.title + ': ' + JSON.stringify({ overflow: result.horizontalOverflow, undersizedControls: result.mobileAudit?.undersizedControls }));
     await context.close();
   }
 } finally {
