@@ -31,10 +31,15 @@ try {
       result.mobileAudit = await page.evaluate(() => {
         const controls = [...document.querySelectorAll('button,a[href],input,select,textarea,[role="button"]')]
           .filter(el => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; });
-        const undersized = controls.filter(el => { const r = el.getBoundingClientRect(); return r.width < 40 || r.height < 40; }).length;
+        const small = controls.filter(el => { const r = el.getBoundingClientRect(); return r.width < 40 || r.height < 40; }).map(el => {
+          const r = el.getBoundingClientRect();
+          return { tag: el.tagName.toLowerCase(), id: el.id || '', className: typeof el.className === 'string' ? el.className : '',
+            text: (el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || '').trim().slice(0, 48),
+            width: Math.round(r.width), height: Math.round(r.height) };
+        });
         return { viewportWidth: innerWidth, documentWidth: document.documentElement.scrollWidth,
           horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 2,
-          visibleControls: controls.length, undersizedControls: undersized };
+          visibleControls: controls.length, undersizedControls: small.length, undersizedDetails: small };
       });
       result.horizontalOverflow = result.mobileAudit.horizontalOverflow;
       if (result.horizontalOverflow) result.layoutWarning = 'Horizontal page overflow at 390px viewport';
@@ -91,7 +96,7 @@ try {
     }
     report.push(result);
     console.log(result.status + ' ' + game.title + ' — ' + result.interactions.join(', ') + ' — mobile: ' + JSON.stringify(result.mobileAudit || {}));
-    if (result.horizontalOverflow || result.mobileAudit?.undersizedControls) console.warn('MOBILE REVIEW ' + game.title + ': ' + JSON.stringify({ overflow: result.horizontalOverflow, undersizedControls: result.mobileAudit?.undersizedControls }));
+    if (result.horizontalOverflow || result.mobileAudit?.undersizedControls) console.warn('MOBILE REVIEW ' + game.title + ': ' + JSON.stringify({ overflow: result.horizontalOverflow, undersizedDetails: result.mobileAudit?.undersizedDetails }));
     await context.close();
   }
 } finally {
