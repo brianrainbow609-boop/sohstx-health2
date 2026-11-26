@@ -247,7 +247,7 @@ el('lv').textContent='Lv '+level();el('cash').textContent='$'+s.cash;el('xp').te
 function stroke(power){s.hp-=power;if(s.hp<=0){const reward=6+level()+2*rank('estimate');s.done++;s.points++;s.cash+=reward;s.hp=maxHP()-rank('jack');s.message='Ticket closed. +$'+reward+' and +1 skill point. '+(s.done%3===0?'Level up! Bobert works harder each stroke.':'Next up: '+jobs[s.done%5]+'.')}save();render()}
 el('pause').onclick=()=>{running=!running;render()};el('burst').onclick=()=>{if(running&&s.charge===chargeNeeded()){s.charge=0;stroke(burstPower())}};
 setInterval(()=>{if(running){s.charge=Math.min(chargeNeeded(),s.charge+1);stroke(strokePower())}},1000);render();
-const robertLines = [
+const bobertLines = [
   "I DON'T HAVE TIME FOR THIS SHIT",
   "IM ABOUT TO LOSE MY SHIT",
   "DAMN IT VALDEZ"
@@ -255,7 +255,7 @@ const robertLines = [
 let lastLine;
 function scheduleSpeech() {
   setTimeout(() => {
-    const choices = robertLines.filter(line => line !== lastLine);
+    const choices = bobertLines.filter(line => line !== lastLine);
     lastLine = choices[Math.floor(Math.random() * choices.length)];
     const bubble = el('speech');
     bubble.textContent = lastLine;
