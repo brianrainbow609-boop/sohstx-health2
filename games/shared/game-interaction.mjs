@@ -30,13 +30,21 @@ try {
       if (!response?.ok()) throw new Error('HTTP ' + response?.status());
       result.horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
       if (result.horizontalOverflow) result.layoutWarning = 'Horizontal page overflow at 390px viewport';
+      if (game.dir === 'games/tempest-chess') {
+        await page.locator('[data-square="e2"]').click();
+        await page.locator('[data-square="e4"]').click();
+        await page.waitForFunction(() => document.querySelector('#undo')?.disabled === false, { timeout: 10000 });
+      }
+      if (game.dir === 'tire-shots-rival') await page.locator('#motion-panel').evaluate(el => { el.open = true; });
       for (const selector of interactions[game.dir] ?? []) {
         const control = page.locator(selector).first();
         if (await control.count() && await control.isVisible() && await control.isEnabled()) {
           await control.tap({ timeout: 3000 }).catch(async () => control.click({ timeout: 3000 }));
           result.interactions.push(selector + ': activated');
+        } else if (!(await control.count())) {
+          throw new Error('Expected control missing: ' + selector);
         } else {
-          result.interactions.push(selector + ': unavailable/disabled');
+          result.interactions.push(selector + ': present but currently disabled/hidden');
         }
       }
       const before = await page.evaluate(() => Object.fromEntries(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)])));
