@@ -25,3 +25,10 @@ jobs:
             sleep 0.25
           done
           node games/shared/browser-smoke.mjs
+      - name: Upload game screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sohstx-game-browser-screenshots
+          path: artifacts/game-screenshots/
+          if-no-files-found: ignore
