@@ -14,9 +14,9 @@ for (const game of games) {
   }
 }
 const bobertPage = read('Robert/index.html').toString();
-assert.match(bobertPage, /<title>That Time I Got Reincarnated as Bobert<\\/title>/);
-assert.match(bobertPage, /<em>Bobert<\\/em>/);
-assert.match(bobertPage, /legacyKey='sohstx\\.robert\\.shift\\.v1'/, 'preserve old Robert save migration');
+assert.ok(bobertPage.includes('<title>That Time I Got Reincarnated as Bobert</title>'));
+assert.ok(bobertPage.includes('<em>Bobert</em>'));
+assert.ok(bobertPage.includes("legacyKey='sohstx.robert.shift.v1'"), 'preserve old Robert save migration');
 assert.doesNotMatch(bobertPage, /robertLines/, 'use Bobert naming for dialogue identifiers');
 const dir = 'tire-shots-rival/sprites/';
 const manifest = JSON.parse(read(dir + 'manifest.json'));
