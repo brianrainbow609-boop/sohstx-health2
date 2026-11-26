@@ -13,6 +13,11 @@ for (const game of games) {
     assert.ok(fs.statSync(fileURLToPath(new URL(path, root))).size, path);
   }
 }
+const bobertPage = read('Robert/index.html').toString();
+assert.match(bobertPage, /<title>That Time I Got Reincarnated as Bobert<\\/title>/);
+assert.match(bobertPage, /<em>Bobert<\\/em>/);
+assert.match(bobertPage, /legacyKey='sohstx\\.robert\\.shift\\.v1'/, 'preserve old Robert save migration');
+assert.doesNotMatch(bobertPage, /robertLines/, 'use Bobert naming for dialogue identifiers');
 const dir = 'tire-shots-rival/sprites/';
 const manifest = JSON.parse(read(dir + 'manifest.json'));
 assert.deepEqual(manifest.characters, ['Hector', 'Erasmo']);
