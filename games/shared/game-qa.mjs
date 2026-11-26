@@ -7,6 +7,7 @@ const errors = [];
 const checked = { games: 0, files: 0, references: 0, scripts: 0, serviceWorkers: 0 };
 const fail = (message) => errors.push(message);
 const exists = (file) => { try { return fs.statSync(path.join(root, file)).isFile(); } catch { return false; } };
+const existsPath = (file) => { try { return fs.existsSync(path.join(root, file)); } catch { return false; } };
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const normalize = (file) => path.posix.normalize(file).replace(/^\.\//, '');
 const localTarget = (value, from) => {
@@ -21,7 +22,7 @@ const checkRef = (value, from, kind) => {
   if (target === null) return;
   checked.references++;
   if (target === '..' || target.startsWith('../')) fail(from + ': ' + kind + ' escapes repository: ' + value);
-  else if (!exists(target)) fail(from + ': missing ' + kind + ': ' + value + ' -> ' + target);
+  else if (!existsPath(target)) fail(from + ': missing ' + kind + ': ' + value + ' -> ' + target);
 };
 const walk = (dir) => fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((entry) => {
   const file = path.posix.join(dir, entry.name);
