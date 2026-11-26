@@ -7,8 +7,8 @@ const browser = await chromium.launch({ headless: true });
 const failures = [];
 try {
   for (const game of games) {
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-    await page.setBypassServiceWorker(true);
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+    const page = await context.newPage();
     const pageErrors = [];
     const failedLocalRequests = [];
     page.on('pageerror', error => pageErrors.push(error.message));
@@ -29,7 +29,7 @@ try {
       failures.push(game.title + ': navigation/test failed: ' + error.message);
       console.log('FAIL ' + game.title + ' — ' + error.message);
     }
-    await page.close();
+    await context.close();
   }
 } finally {
   await browser.close();
