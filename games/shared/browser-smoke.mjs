@@ -5,6 +5,7 @@ const games = JSON.parse(fs.readFileSync('games/catalog.json', 'utf8'));
 const base = process.env.GAME_QA_BASE_URL || 'http://127.0.0.1:4173';
 const browser = await chromium.launch({ headless: true });
 const failures = [];
+fs.mkdirSync('artifacts/game-screenshots', { recursive: true });
 try {
   for (const game of games) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
@@ -24,7 +25,12 @@ try {
       await page.waitForTimeout(400);
       if (pageErrors.length) failures.push(game.title + ': runtime errors: ' + pageErrors.join(' | '));
       if (failedLocalRequests.length) failures.push(game.title + ': failed local requests: ' + failedLocalRequests.join(' | '));
-      console.log((pageErrors.length || failedLocalRequests.length ? 'FAIL ' : 'PASS ') + game.title + ' — ' + url);
+      await page.screenshot({ path: 'artifacts/game-screenshots/' + game.dir.replaceAll('/', '_') + '.png', fullPage: true });
+      const installUrl = base + '/' + game.dir + '/install.html';
+      const installResponse = await page.goto(installUrl, { waitUntil: 'networkidle', timeout: 20000 });
+      if (!installResponse?.ok()) failures.push(game.title + ': install page returned HTTP ' + installResponse?.status());
+      if (!(await page.locator('body').innerText()).trim()) failures.push(game.title + ': install page body is empty');
+      console.log((pageErrors.length || failedLocalRequests.length ? 'FAIL ' : 'PASS ') + game.title + ' — game and install pages');
     } catch (error) {
       failures.push(game.title + ': navigation/test failed: ' + error.message);
       console.log('FAIL ' + game.title + ' — ' + error.message);
