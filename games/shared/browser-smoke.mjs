@@ -25,11 +25,18 @@ try {
       await page.waitForTimeout(400);
       if (pageErrors.length) failures.push(game.title + ': runtime errors: ' + pageErrors.join(' | '));
       if (failedLocalRequests.length) failures.push(game.title + ': failed local requests: ' + failedLocalRequests.join(' | '));
-      await page.screenshot({ path: 'artifacts/game-screenshots/' + game.dir.replaceAll('/', '_') + '.png', fullPage: true });
+      await page.screenshot({ path: 'artifacts/game-screenshots/' + game.dir.replaceAll('/', '_') + '-mobile.png', fullPage: true });
       const installUrl = base + '/' + game.dir + '/install.html';
       const installResponse = await page.goto(installUrl, { waitUntil: 'networkidle', timeout: 20000 });
       if (!installResponse?.ok()) failures.push(game.title + ': install page returned HTTP ' + installResponse?.status());
       if (!(await page.locator('body').innerText()).trim()) failures.push(game.title + ': install page body is empty');
+      await page.screenshot({ path: 'artifacts/game-screenshots/' + game.dir.replaceAll('/', '_') + '-install-mobile.png', fullPage: true });
+      const desktop = await browser.newPage({ viewport: { width: 1365, height: 900 } });
+      await desktop.setDefaultTimeout(10000);
+      const desktopResponse = await desktop.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
+      if (!desktopResponse?.ok()) failures.push(game.title + ': desktop page returned HTTP ' + desktopResponse?.status());
+      await desktop.screenshot({ path: 'artifacts/game-screenshots/' + game.dir.replaceAll('/', '_') + '-desktop.png', fullPage: true });
+      await desktop.close();
       console.log((pageErrors.length || failedLocalRequests.length ? 'FAIL ' : 'PASS ') + game.title + ' — game and install pages');
     } catch (error) {
       failures.push(game.title + ': navigation/test failed: ' + error.message);
