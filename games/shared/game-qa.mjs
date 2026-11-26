@@ -69,9 +69,12 @@ for (const file of files) {
     }
   }
   if (ext === '.css') {
-    for (const match of read(file).matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/gi)) checkRef(match[1], file, 'CSS asset');
+    const css = read(file);
+    for (const match of css.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/gi)) checkRef(match[1], file, 'CSS asset');
+    for (const match of css.matchAll(/@import\s+["']([^"']+)["']/gi)) checkRef(match[1], file, 'CSS import');
   }
   if (['.js', '.mjs', '.cjs'].includes(ext)) {
+    for (const match of read(file).matchAll(/(?:\bfrom\s*|\bimport\s*\()(['"])(\.{1,2}\/[^'"]+)\1/g)) checkRef(match[2], file, 'module import');
     checked.scripts++;
     const result = spawnSync(process.execPath, ['--check', file], { cwd: root, encoding: 'utf8' });
     if (result.status !== 0) fail(file + ': JavaScript syntax check failed: ' + (result.stderr || result.stdout).trim());
