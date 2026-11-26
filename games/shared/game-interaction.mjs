@@ -35,6 +35,9 @@ try {
         await page.locator('[data-square="e4"]').click();
         await page.waitForFunction(() => document.querySelector('#undo')?.disabled === false, null, { timeout: 10000 });
         if (!(await page.locator('#record').innerText()).includes('e4')) throw new Error('Chess move e4 was not recorded');
+        await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
+        if (!(await page.locator('#record').innerText()).includes('e4')) throw new Error('Chess move e4 did not survive reload');
+        result.reload = 'chess move restored after reload';
         await page.locator('#undo').click();
         if ((await page.locator('#record').innerText()) !== 'Opening position') throw new Error('Chess undo did not restore the opening position');
         result.interactions.push('e2-e4 and undo: verified');
@@ -60,10 +63,16 @@ try {
         if (!pixels) throw new Error('Fighter animation preview canvas remained blank');
         result.interactions.push('animation preview pixels: ' + pixels);
       }
+      if (game.dir === 'pinball') {
+        await page.evaluate(() => localStorage.setItem('sohstx-pinball-best', '12345'));
+        await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
+        if ((await page.locator('#best').innerText()).trim() !== '12345') throw new Error('Pinball best score did not restore from localStorage');
+        result.reload = 'pinball best score restored after reload';
+      }
       const before = await page.evaluate(() => Object.fromEntries(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)])));
       await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
       const after = await page.evaluate(() => Object.fromEntries(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)])));
-      result.reload = JSON.stringify(before) === JSON.stringify(after) ? 'localStorage stable across reload' : 'localStorage changed across reload';
+      if (result.reload === 'not-tested') result.reload = JSON.stringify(before) === JSON.stringify(after) ? 'localStorage stable across reload' : 'localStorage changed across reload';
       if (errors.length) throw new Error(errors.join(' | '));
       result.status = 'PASS';
     } catch (error) {
