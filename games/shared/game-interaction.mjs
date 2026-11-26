@@ -33,7 +33,7 @@ try {
       if (game.dir === 'games/tempest-chess') {
         await page.locator('[data-square="e2"]').click();
         await page.locator('[data-square="e4"]').click();
-        await page.waitForFunction(() => document.querySelector('#undo')?.disabled === false, { timeout: 10000 });
+        await page.waitForFunction(() => document.querySelector('#undo')?.disabled === false, null, { timeout: 10000 });
       }
       if (game.dir === 'tire-shots-rival') await page.locator('#motion-panel').evaluate(el => { el.open = true; });
       for (const selector of interactions[game.dir] ?? []) {
