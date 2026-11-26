@@ -12,3 +12,4 @@ jobs:
           node-version: 22
       - run: node games/shared/game-kit.test.mjs
       - run: node games/shared/catalog.test.mjs
+      - run: node games/shared/game-qa.mjs
