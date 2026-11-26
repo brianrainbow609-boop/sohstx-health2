@@ -59,4 +59,4 @@ function render(){const sky=ctx.createLinearGradient(0,0,0,100);sky.addColorStop
  if(damageFlash>0){ctx.fillStyle='rgba(180,20,10,.26)';ctx.fillRect(0,0,W,H);damageFlash-=.016}
 }
 function frame(t){const dt=Math.min((t-last)/1000,.05);last=t;move(dt);render();requestAnimationFrame(frame)}sync();requestAnimationFrame(frame);
-</script><script src="/game-install.js" defer></script><script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/TireShop/sw.js',{scope:'/TireShop/'}).catch(()=>{});</script></body></html>
+</script><script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/TireShop/sw.js',{scope:'/TireShop/'}).catch(()=>{});</script></body></html>
