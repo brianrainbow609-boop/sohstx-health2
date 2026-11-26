@@ -34,6 +34,10 @@ try {
         await page.locator('[data-square="e2"]').click();
         await page.locator('[data-square="e4"]').click();
         await page.waitForFunction(() => document.querySelector('#undo')?.disabled === false, null, { timeout: 10000 });
+        if (!(await page.locator('#record').innerText()).includes('e4')) throw new Error('Chess move e4 was not recorded');
+        await page.locator('#undo').click();
+        if ((await page.locator('#record').innerText()) !== 'Opening position') throw new Error('Chess undo did not restore the opening position');
+        result.interactions.push('e2-e4 and undo: verified');
       }
       if (game.dir === 'tire-shots-rival') await page.locator('#motion-panel').evaluate(el => { el.open = true; });
       for (const selector of interactions[game.dir] ?? []) {
@@ -46,6 +50,15 @@ try {
         } else {
           result.interactions.push(selector + ': present but currently disabled/hidden');
         }
+      }
+      if (game.dir === 'tire-shots-rival') {
+        const pixels = await page.locator('#motion-preview').evaluate(canvas => {
+          const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+          let visible = 0; for (let i = 3; i < data.length; i += 4) if (data[i] > 0) visible++;
+          return visible;
+        });
+        if (!pixels) throw new Error('Fighter animation preview canvas remained blank');
+        result.interactions.push('animation preview pixels: ' + pixels);
       }
       const before = await page.evaluate(() => Object.fromEntries(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)])));
       await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
