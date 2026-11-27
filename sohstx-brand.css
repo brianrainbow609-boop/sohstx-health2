@@ -38,3 +38,8 @@ nav.sohstx-brandbar .soh-links a[aria-current=page]{color:var(--soh-cyan);border
 
 .sohstx-app-shell{background-color:var(--soh-bg);font-family:var(--soh-font)}
 .sohstx-app-shell :where(a,button,input,select):focus-visible{outline:3px solid var(--soh-cyan);outline-offset:3px}
+
+/* Accessible return-to-home control for standalone game and install pages. */
+.sohstx-home-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:7px 11px;border:1px solid var(--soh-line,#365f72);border-radius:999px;background:rgba(3,7,12,.88);color:var(--soh-text,#eaf1f5)!important;font:700 12px/1.2 var(--soh-font,system-ui,sans-serif);text-decoration:none;white-space:nowrap;flex:0 0 auto}
+.sohstx-home-link:hover{border-color:var(--soh-cyan,#27cefa);color:var(--soh-cyan,#27cefa)!important}
+.sohstx-home-link:focus-visible{outline:3px solid var(--soh-cyan,#27cefa);outline-offset:3px}
