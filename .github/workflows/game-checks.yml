@@ -13,6 +13,8 @@ jobs:
           node-version: 22
       - run: node games/shared/game-kit.test.mjs
       - run: node games/shared/catalog.test.mjs
+      - name: Run pool hall and rivals unit tests
+        run: node --test games/hectors-pool-hall/*.test.mjs tire-shots-rival/combat.test.mjs
       - run: node games/shared/game-qa.mjs
       - run: npm install --no-save playwright
       - run: npx playwright install chromium
