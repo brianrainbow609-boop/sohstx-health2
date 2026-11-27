@@ -1,9 +1,9 @@
-import { cooldown, newFight, resolvePunch, restoreProgress, upgrade } from './combat.mjs?v=20261125d';
+import { cooldown, newFight, resolvePunch, restoreProgress, upgrade } from './combat.mjs?v=20261127a';
 
-import { drawMotion, frameCount, motionFrame, motions } from './motion.mjs?v=20261125c';
+import { drawMotion, frameCount, motionFrame, motions } from './motion.mjs?v=20261127a';
 
 const storageKey = 'tireShotsRival';
-const version = '20261125c';
+const version = '20261127a';
 const get = (id) => document.getElementById(id);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const statControls = new Map();
@@ -150,7 +150,7 @@ function renderStatus() {
   get('next').disabled = !fight.result;
   for (const [stat, { label, button }] of statControls) {
     const level = progress[stat];
-    const name = stat[0].toUpperCase() + stat.slice(1);
+    const name = stat === 'strength' ? 'Power' : stat[0].toUpperCase() + stat.slice(1);
     label.textContent = `${name} Lv ${level}`;
     button.textContent = `Upgrade · ${level * 5} pts`;
     button.setAttribute('aria-label', `Upgrade ${name} for ${level * 5} points`);
@@ -357,4 +357,5 @@ async function start() {
 }
 
 get('retry').addEventListener('click', start);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 start();

@@ -1,5 +1,6 @@
 const stats = ['strength', 'speed', 'accuracy'];
 const defaults = { points: 0, wins: 0, losses: 0, round: 1, strength: 1, speed: 1, accuracy: 1 };
+const limits = { points: 1_000_000, wins: 1_000_000, losses: 1_000_000, round: 1_000_000, strength: 100, speed: 100, accuracy: 100 };
 
 function findFighter(value, roster) {
   const id = value === 0 ? 'hector' : value === 1 ? 'erasmo' : value;
@@ -10,7 +11,7 @@ export function restoreProgress(saved, roster) {
   const progress = { ...defaults };
   for (const [key, minimum] of Object.entries(defaults)) {
     const value = saved?.[key];
-    if (Number.isSafeInteger(value) && value >= minimum) progress[key] = value;
+    if (Number.isSafeInteger(value) && value >= minimum && value <= limits[key]) progress[key] = value;
   }
   const firstFighter = findFighter('hector', roster) ?? roster[0].id;
   progress.me = findFighter(saved?.me, roster) ?? firstFighter;
