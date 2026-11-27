@@ -1,5 +1,5 @@
-const CACHE='sohstx-tire-shop-rivals-v1';
-const CORE=[
+const CACHE='sohstx-tire-shop-rivals-v2';
+const CORE=['/sohstx-brand.css',
  './','./index.html','./install.html','./rivals.css?v=20261127a',
  './rivals.mjs?v=20261127a','./combat.mjs?v=20261127a','./motion.mjs?v=20261127a',
  './manifest.webmanifest','./icon-192.png','./icon-512.png',

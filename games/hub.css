@@ -14,3 +14,12 @@ header{background:#050a10;border-color:#345f73}
   display: inline-block;
   margin: .45rem .65rem 0;
 }
+
+/* Unified game library presentation; preserve complete card artwork. */
+body{font-family:var(--soh-font,system-ui);background-color:var(--soh-bg,#03070c)}
+#cards article{border-radius:12px;background:var(--soh-panel,#101e29)}
+#cards .cover img,#cards .cover img[src$="/tire-shop-rivals.webp"]{aspect-ratio:2/1;object-fit:contain;background:#061018}
+#cards .cover span,#cards .cover:has(> img[src$="/tire-shop-rivals.webp"]) > span{position:static;display:block;margin:0;padding:8px 12px;color:var(--soh-muted,#a9bbc7);background:#0b1720}
+#cards .actions .primary{background:var(--soh-cyan,#27cefa);color:#03070c}
+#cards .actions a{border-radius:8px;min-height:44px}
+.hero{border-radius:12px}

@@ -11,3 +11,30 @@
 .sohstx-portal .action,.sohstx-portal button.primary{background:var(--soh-cyan);color:#06131a}
 .sohstx-portal .intro h1{color:#e9f0f4}
 @media(max-width:650px){.sohstx-brandbar{flex-wrap:wrap;justify-content:center}.sohstx-brandbar .soh-links{justify-content:center}.sohstx-philosophy{grid-template-columns:1fr;padding:4px 0}.sohstx-philosophy>div+div{border-left:0;border-top:1px solid #365f72}}
+
+/* Unified design tokens and opt-in page surfaces. */
+:root{--soh-bg:#03070c;--soh-panel:#101e29;--soh-cyan:#27cefa;--soh-line:#365f72;--soh-text:#eaf1f5;--soh-muted:#a9bbc7;--soh-radius:12px;--soh-font:system-ui,Segoe UI,Arial,sans-serif}
+.sohstx-unified{color-scheme:dark;background:var(--soh-bg);color:var(--soh-text);font-family:var(--soh-font)}
+.sohstx-unified a{color:var(--soh-cyan)}
+.sohstx-unified :is(article,section.install,.installpage){border-color:var(--soh-line);border-radius:var(--soh-radius);background:var(--soh-panel)}
+.sohstx-unified :is(button,.primary,.action){font-family:var(--soh-font);border-radius:8px}
+.sohstx-unified button:not(:disabled){background:#102b39;color:var(--soh-text);border:1px solid var(--soh-cyan);min-height:44px}
+.sohstx-unified textarea{background:var(--soh-bg);color:var(--soh-text);border:1px solid var(--soh-line);border-radius:8px;padding:12px;font:14px/1.5 var(--soh-font)}
+.sohstx-unified :is(a,button,input,textarea):focus-visible,.sohstx-brandbar a:focus-visible{outline:3px solid var(--soh-cyan);outline-offset:3px}
+.sohstx-unified h1{letter-spacing:-.035em}
+.sohstx-brandbar .soh-links a{padding:8px 2px}
+@media(prefers-reduced-motion:reduce){.sohstx-unified *{transition:none!important;scroll-behavior:auto!important}}
+
+/* Shared navigation overrides page-local nav rules. */
+nav.sohstx-brandbar{box-sizing:border-box;width:100%;max-width:none;margin:0;min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:12px;font:700 13px/1.4 var(--soh-font);letter-spacing:.04em}
+nav.sohstx-brandbar .soh-links{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(8px,1.5vw,20px)}
+nav.sohstx-brandbar .soh-links a{color:var(--soh-text);font-size:13px;text-decoration:none}
+nav.sohstx-brandbar .soh-links a[aria-current=page]{color:var(--soh-cyan);border-bottom:2px solid var(--soh-cyan)}
+@media(max-width:850px){nav.sohstx-brandbar{flex-wrap:wrap;justify-content:center}nav.sohstx-brandbar .soh-links{order:3;width:100%}}
+
+/* Gameplay shell only: retain canvas, controls, and game-specific status colors. */
+.sohstx-game-shell{background-color:var(--soh-bg);font-family:var(--soh-font)}
+.sohstx-game-shell :where(a,button,input,select):focus-visible{outline:3px solid var(--soh-cyan);outline-offset:3px}
+
+.sohstx-app-shell{background-color:var(--soh-bg);font-family:var(--soh-font)}
+.sohstx-app-shell :where(a,button,input,select):focus-visible{outline:3px solid var(--soh-cyan);outline-offset:3px}
