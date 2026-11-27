@@ -1,4 +1,4 @@
-const cacheName = 'sohstx-night-shift-v3';
+const cacheName = 'sohstx-night-shift-v4';
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(cacheName).then(cache => cache.addAll(['/sohstx-brand.css','/night-shift/install.html','/games/hub.css','/games/install.js','./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'])));
 });
