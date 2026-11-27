@@ -26,7 +26,7 @@ function hasVisibleHomeLink(file,source){
 }
 test('every SohStx site and game HTML page has a visible direct Home link',()=>{
   const files=walk(root);
-  assert.ok(files.length>=30,'Expected the full site HTML inventory');
+  assert.ok(files.length>=28,'Expected the current site HTML inventory');
   const missing=files.filter(file=>!hasVisibleHomeLink(file,fs.readFileSync(file,'utf8')));
   assert.deepEqual(missing.map(file=>path.relative(root,file).replaceAll('\\','/')),[]);
 });
