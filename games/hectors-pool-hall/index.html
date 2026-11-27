@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102b25">
+<meta name="description" content="Join Hector for a game at SohStx Pool Hall. Choose a table, opponent and difficulty.">
+<title>Hector's Pool Hall • SohStx Games</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="/games/shared/controls.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><a href="../">← Game Hub</a><span>SOH/STX ARCADE</span></header>
+<main>
+<section id="hall">
+<div class="intro">
+<img src="assets/hector-idle.png" alt="Hector, the pool hall host">
+<div><p class="eyebrow">THE NEIGHBORHOOD’S NEWEST HANGOUT</p><h1>Hector's<br>Pool Hall</h1><p>Pick a table, call your shot, and see who owns the felt.</p></div>
+</div>
+<div class="hall-head"><h2>Choose your table</h2><p>Choose from six table styles with arcade pool rules and adjustable opponents.</p></div>
+<div id="mode-grid" class="mode-grid">
+<button data-mode="8-ball"><strong>8-Ball</strong><span>Classic stripes vs solids</span><small>First to clear your group, then the 8</small></button>
+<button data-mode="9-ball"><strong>9-Ball</strong><span>Lowest ball first</span><small>Race to the 9</small></button>
+<button data-mode="10-ball"><strong>10-Ball</strong><span>Call your pocket</span><small>Precision rack</small></button>
+<button data-mode="straight-pool"><strong>Straight Pool</strong><span>Every ball counts</span><small>Build your run</small></button>
+<button data-mode="cutthroat"><strong>Cutthroat</strong><span>Three-way table</span><small>Keep your group alive</small></button>
+<button data-mode="practice"><strong>Practice</strong><span>No opponent, no pressure</span><small>Work on your aim</small></button>
+</div>
+<div class="opponent-panel">
+<div><h2>Pick your opponent</h2><p>Choose a familiar face and set their skill.</p></div>
+<label>Opponent<select id="opponent"><option>Hector</option><option>Erasmo</option><option>Bobert</option><option>Ray</option><option>Justin</option></select></label>
+<label>Difficulty<select id="difficulty"></select></label>
+</div>
+</section>
+<section id="game" hidden>
+<div class="game-heading"><div><p class="eyebrow">HECTOR'S POOL HALL</p><h1 id="mode-title">Eight Ball</h1></div><button id="back" class="secondary">← Tables</button></div>
+<div class="game-layout">
+<div class="table-wrap"><canvas id="table" width="1000" height="560" aria-label="Pool table. Drag from the cue ball toward your shot direction and release."></canvas></div>
+<aside class="score-panel">
+<img src="assets/hector-idle.png" alt="Hector">
+<h2 id="opponent-name">Hector</h2>
+<p id="status" role="status" aria-live="polite">Rack ready.</p>
+<p id="turn">Your shot</p><p id="score">You 0 — 0 Opponent</p>
+<label id="called-pocket-wrap" for="called-pocket" hidden>Call pocket<select id="called-pocket"><option value="0">Top left</option><option value="1">Top middle</option><option value="2">Top right</option><option value="3">Bottom left</option><option value="4">Bottom middle</option><option value="5">Bottom right</option></select></label>
+<label for="power">Shot power <output id="power-value">65%</output></label>
+<input id="power" type="range" min="10" max="100" value="65">
+<div class="actions"><button id="rack-again">Rack again</button></div>
+<p class="hint">Drag from the cue ball toward where you want it to travel. Release to shoot.</p>
+</aside>
+</div>
+</section>
+</main>
+<script type="module" src="game.mjs"></script>
+</body>
+</html>
