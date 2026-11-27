@@ -39,7 +39,47 @@ function chutePosition(t){
  const [x,y]=chute[i],[endX,endY]=chute[i+1],f=position-i;
  return [x+(endX-x)*f,y+(endY-y)*f];
 }
+// Each cubic defines both the wireform and the route taken by the ball.
+const wireforms = [
+ {name:'Skyway', color:'#70edff', p:[[330,124],[337,8],[102,9],[147,127]], duration:.78, speed:475},
+ {name:'Dragon Run', color:'#ffae58', p:[[270,306],[318,199],[295,25],[197,121]], duration:.67, speed:530}
+];
+function railPoint(rail,t){
+ const [a,b,c,d]=rail.p,u=1-t;
+ return a.map((v,i)=>u*u*u*v+3*u*u*t*b[i]+3*u*t*t*c[i]+t*t*t*d[i]);
+}
+function advanceRail(ball,dt){
+ const rail=ball.wire;
+ ball.progress=Math.min(1,ball.progress+dt/rail.duration);
+ [ball.x,ball.y]=railPoint(rail,ball.progress);
+ if(ball.progress<1)return;
+ const [cx,cy]=rail.p[2],dx=ball.x-cx,dy=ball.y-cy,length=Math.hypot(dx,dy);
+ ball.vx=rail.speed*dx/length;ball.vy=rail.speed*dy/length;
+ ball.wire=null;ball.cool=.25;
+ burst(ball.x,ball.y,rail.color,14);
+ if(rail===wireforms[1]){award(350);announce('Dragon Run · 350 points')}
+}
+function drawWire(rail){
+ const [a,b,c,d]=rail.p;
+ ctx.save();ctx.lineCap='round';
+ for(const [width,color] of [[15,'#061621'],[11,'#a0b6c3'],[8,'#263642'],[2,rail.color]]){
+  ctx.beginPath();ctx.moveTo(...a);ctx.bezierCurveTo(...b,...c,...d);
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+ }
+ const rider=balls.find(ball=>ball.wire===rail);
+ for(let i=1;i<16;i++){
+  const t=i/16,[x,y]=railPoint(rail,t),lit=rider&&Math.abs(rider.progress-t)<.14;
+  oval(x,y,lit?4:2,lit?4:2,lit?'#fff6d5':rail.color);
+ }
+ oval(...a,10,6,rail.color);oval(...a,7,3,'#132937');
+ ctx.restore();
+}
 function updateBall(b,dt,swings){
+ if(b.wire){advanceRail(b,dt);return}
+ if(!b.cool && b.ride<0 && b.vy< -75){
+  const rail=wireforms.find(({p:[[x,y]]})=>Math.abs(b.x-x)<15 && b.y>=y && b.y+b.vy*dt<=y);
+  if(rail){b.wire=rail;b.progress=0;advanceRail(b,dt);return}
+ }
  if(b.ride>=0){
   b.ride+=dt/.85;[b.x,b.y]=chutePosition(b.ride);
   if(b.ride>=1){b.ride=-1;b.vx=185;b.vy=160;b.cool=.6;
@@ -108,6 +148,8 @@ function draw(){const bg=ctx.createLinearGradient(0,0,0,560);bg.addColorStop(0,'
  ctx.strokeStyle='#41777b';ctx.lineWidth=1;for(const r of [76,83,91]){ctx.beginPath();ctx.arc(164,236,r,0,Math.PI*2);ctx.stroke()}
  label('TEMPEST',169,77,30,'#ffe3a0');label('Dragon Vault',169,99,15,'#a6ded9');
  for(const w of walls){line(...w,'#071522',12);line(...w,'#4de0db',5);line(...w,'#d5fff4',1.25)}
+ wireforms.forEach(drawWire);
+ label('DRAGON RUN',266,331,9,'#ffca88');
  const open=drops.size===3;
  for(let i=1;i<chute.length;i++){
   const seg=[...chute[i-1],...chute[i]];line(...seg,'#548390',13);line(...seg,open?'#43d2dc':'#214753',9);
