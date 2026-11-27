@@ -1,9 +1,45 @@
-﻿import assert from 'node:assert/strict';import {createGameState,saveGame,loadGame,animationFrame,spriteMetadata} from './game-kit.mjs';
+﻿import assert from 'node:assert/strict';import {createGameState,saveGame,loadGame,animationFrame,spriteMetadata,createGameEconomy,GAME_ECONOMY_ENABLED} from './game-kit.mjs';
 const data=new Map(),storage={setItem:(k,v)=>data.set(k,v),getItem:k=>data.get(k)||null};
 const game=createGameState({name:'Demo',initial:{coins:5}});saveGame(storage,'demo',game);assert.equal(loadGame(storage,'demo').data.coins,5);
 assert.equal(loadGame(storage,'missing'),null);assert.equal(animationFrame({frameCount:4,fps:10,elapsedMs:250}),2);assert.equal(animationFrame({frameCount:4,fps:10,elapsedMs:450}),0);
 assert.deepEqual(spriteMetadata({id:'hector',name:'Hector',type:'character',tags:['crew','crew']}).tags,['crew']);
 assert.equal(spriteMetadata({id:'erasmo',name:'Erasmo',type:'character'}).name,'Erasmo');
 assert.throws(()=>saveGame(storage,'../bad',game));assert.throws(()=>animationFrame({frameCount:0}));assert.throws(()=>loadGame({getItem:()=>'{"name":"bad"}'},'demo'));
-console.log('9 shared game-kit assertions passed');
+
+const economyData=new Map(),economyStorage={setItem:(k,v)=>economyData.set(k,v),getItem:k=>economyData.get(k)??null};
+assert.equal(GAME_ECONOMY_ENABLED,false);
+const disabledEconomy=createGameEconomy({storage:economyStorage});
+assert.equal(disabledEconomy.enabled,false);
+assert.equal(disabledEconomy.earnCurrency({amount:10,gameId:'pool-hall',reason:'match-win',idempotencyKey:'disabled:currency'}).reason,'disabled');
+assert.equal(economyData.has(disabledEconomy.storageKey),false);
+const economy=createGameEconomy({storage:economyStorage,enabled:true,now:()=>1700000000000});
+assert.equal(economy.earnCurrency({amount:100,gameId:'pool-hall',reason:'match-win',idempotencyKey:'match:pool:1'}).balance,100);
+assert.equal(economy.spendCurrency({amount:40,gameId:'pool-hall',reason:'cue-upgrade',sink:'cue-upgrade',idempotencyKey:'spend:pool:1'}).balance,60);
+assert.equal(economy.earnCurrency({amount:500,gameId:'pool-hall',reason:'duplicate-win',idempotencyKey:'match:pool:1'}).reason,'duplicate');
+assert.equal(economy.spendCurrency({amount:1000,gameId:'pool-hall',reason:'too-expensive',sink:'table-unlock',idempotencyKey:'spend:pool:2'}).reason,'insufficient-funds');
+assert.equal(economy.earnPoints({amount:50,gameId:'pool-hall',reason:'rack-points',idempotencyKey:'points:pool:1'}).balance,50);
+assert.equal(economy.earnPoints({amount:20,gameId:'pinball',reason:'round-points',idempotencyKey:'points:pinball:1'}).balance,20);
+assert.equal(economy.spendPoints({amount:15,gameId:'pool-hall',reason:'practice-rerack',sink:'practice-rerack',idempotencyKey:'points:pool:spend:1'}).balance,35);
+assert.equal(economy.getPointsBalance('pinball'),20);
+const snapshot=economy.getState();snapshot.currencyBalance=999;assert.equal(economy.getCurrencyBalance(),60);
+const reloadedEconomy=createGameEconomy({storage:economyStorage,enabled:true});
+assert.equal(reloadedEconomy.getCurrencyBalance(),60);assert.equal(reloadedEconomy.getPointsBalance('pool-hall'),35);
+const legacyEconomyData=new Map([['sohstx-economy-shared',JSON.stringify({version:1,balance:25,points:{'pool-hall':9},ledger:[]})]]);
+const migratedEconomy=createGameEconomy({storage:{setItem:(k,v)=>legacyEconomyData.set(k,v),getItem:k=>legacyEconomyData.get(k)??null}});
+assert.equal(migratedEconomy.getCurrencyBalance(),25);assert.equal(migratedEconomy.getPointsBalance('pool-hall'),9);
+assert.equal(JSON.parse(legacyEconomyData.get(migratedEconomy.storageKey)).version,2);
+const existingSave=storage.getItem('sohstx-game-demo');
+const isolatedEconomy=createGameEconomy({storage,enabled:true});
+isolatedEconomy.earnCurrency({amount:1,gameId:'pool-hall',reason:'save-isolation',idempotencyKey:'isolation:1'});
+assert.equal(storage.getItem('sohstx-game-demo'),existingSave);
+assert.throws(()=>createGameEconomy({storage,key:'../bad'}));
+assert.throws(()=>economy.earnCurrency({amount:0,gameId:'pool-hall',reason:'bad',idempotencyKey:'bad:amount'}));
+assert.throws(()=>economy.earnPoints({amount:1,gameId:'../bad',reason:'bad',idempotencyKey:'bad:game'}));
+const failingEconomy=createGameEconomy({storage:{getItem:()=>null,setItem:()=>{throw Error('storage unavailable')}},enabled:true});
+assert.throws(()=>failingEconomy.earnCurrency({amount:5,gameId:'pool-hall',reason:'write-failure',idempotencyKey:'write:failure'}));
+assert.equal(failingEconomy.getCurrencyBalance(),0);
+const corruptEconomyData=new Map([['sohstx-economy-shared','{"version":99}']]);
+assert.throws(()=>createGameEconomy({storage:{getItem:k=>corruptEconomyData.get(k)??null,setItem:(k,v)=>corruptEconomyData.set(k,v)}}));
+
+console.log('Shared game-kit and disabled economy regression tests passed');
 
