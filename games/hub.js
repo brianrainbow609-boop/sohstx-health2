@@ -1,6 +1,6 @@
 async function renderLibrary() {
   const cards = document.querySelector('#cards');
-  const response = await fetch('/games/catalog.json');
+  const response = await fetch('/games/catalog.json', { cache: 'no-store' });
   if (!response.ok) throw new Error('Catalog unavailable');
   const games = await response.json();
   const template = document.createElement('template');
@@ -13,7 +13,7 @@ async function renderLibrary() {
     card.querySelector('p').textContent = game.description;
     for (const link of card.querySelectorAll('a')) {
       const install = link.classList.contains('secondary');
-      link.href = '/' + game.dir + '/' + (install ? 'install.html' : '');
+      link.href = install ? (game.installUrl || '/' + game.dir + '/install.html') : '/' + game.dir + '/';
       link.setAttribute('aria-label', (install ? 'Install ' : 'Play ') + game.title);
     }
     cards.append(card);

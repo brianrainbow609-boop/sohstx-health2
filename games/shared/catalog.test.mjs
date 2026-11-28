@@ -73,3 +73,22 @@ for (const record of index.embedded) {
     for (const key of Object.keys(record.names)) assert.ok(assets[key]?.startsWith('data:image/'), key);
   }
 }
+
+
+const poolHall = games.find(game => game.title === "Hector's Pool Hall");
+const rivals = games.find(game => game.title === 'Tire Shop Rivals');
+assert.ok(poolHall && rivals, 'Pool Hall and Rivals catalog entries exist');
+assert.equal(poolHall.art, 'hectors-pool-hall', 'Pool Hall must use its own dedicated artwork');
+assert.notEqual(poolHall.art, rivals.art, 'Pool Hall artwork must not duplicate Rivals');
+const poolArt = read('games/art/' + poolHall.art + '.webp');
+assert.equal(poolArt.subarray(8, 12).toString(), 'WEBP', 'Pool Hall card artwork is a valid WebP');
+assert.ok(poolArt.length > 10000, 'Pool Hall artwork is a full-size original image, not a placeholder');
+assert.ok(poolHall.dir === 'games/hectors-pool-hall', 'Pool Hall has a canonical root-relative game directory');
+assert.equal(poolHall.installUrl, '/games/hectors-pool-hall/install', 'Pool Hall uses the canonical extensionless install URL');
+const hubScript = read('games/hub.js').toString();
+assert.match(hubScript, /cache: 'no-store'/, 'Game Hub always refreshes its catalog');
+assert.match(hubScript, /game\.installUrl \|\|/, 'Game Hub prefers an explicit install URL when provided');
+const poolInstall = read(poolHall.dir + '/install.html').toString();
+assert.match(poolInstall, /<title>Install Hector's Pool Hall<\/title>/, 'Pool Hall install page has its own title');
+assert.match(poolInstall, /rel="manifest" href="manifest\.webmanifest"/, 'Pool Hall install page links its local manifest');
+console.log('Pool Hall card artwork is unique and its install page/manifest routes are present.');

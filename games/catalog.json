@@ -66,7 +66,8 @@
     "dir": "games/hectors-pool-hall",
     "title": "Hector's Pool Hall",
     "genre": "Pool hall simulator",
-    "art": "tire-shop-rivals",
+    "art": "hectors-pool-hall",
+    "installUrl": "/games/hectors-pool-hall/install",
     "description": "Join Hector at the hall. Pick 8-ball, 9-ball, 10-ball, straight pool, cutthroat or practice, then challenge familiar faces across six difficulty levels."
   }
 ]
